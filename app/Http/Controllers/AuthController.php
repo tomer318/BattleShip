@@ -22,7 +22,13 @@ class AuthController extends Controller
             'name'            => $validated['name'],
             'email'           => $validated['email'],
             'password'        => Hash::make($validated['password']),
-            'credits'         => 100, // Tặng khởi nghiệp 100$
+            'credits'         => 100,
+            'gems'            => 0,
+            'elo'             => 500,
+            'rank_tier'       => 'seaman',
+            'pvp_wins'        => 0,
+            'pvp_losses'      => 0,
+            'accuracy_rate'   => 30.0,
             'inventory'       => [],
             'daily_purchases' => [
                 'date'  => now()->toDateString(),
@@ -96,6 +102,11 @@ class AuthController extends Controller
             'email'           => $user->email,
             'credits'         => $user->credits ?? 0,
             'gems'            => $user->gems ?? 0,
+            'elo'             => $user->elo ?? 500,
+            'rank_tier'       => $user->rank_tier ?? 'seaman',
+            'pvp_wins'        => $user->pvp_wins ?? 0,
+            'pvp_losses'      => $user->pvp_losses ?? 0,
+            'accuracy_rate'   => $user->accuracy_rate ?? 30.0,
             'inventory'       => $user->inventory ?? [],
             'daily_purchases' => $user->daily_purchases ?? ['date' => now()->toDateString(), 'items' => []],
             'stats'           => $user->stats ?? [

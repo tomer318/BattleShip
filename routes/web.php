@@ -5,6 +5,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\PvpController;
+use App\Http\Controllers\RankController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -40,3 +41,9 @@ Route::post('/api/pvp/ready', [PvpController::class, 'ready']);
 Route::post('/api/pvp/fire', [PvpController::class, 'fire']);
 Route::post('/api/pvp/use-powerup', [PvpController::class, 'useSkill']);
 Route::post('/api/pvp/surrender', [PvpController::class, 'surrender']);
+Route::get('/api/ranks/ladder', [RankController::class, 'getLadder']);
+Route::post('/api/ranks/matchmake', [RankController::class, 'matchmake']);
+Route::post('/api/ranks/cancel-matchmake', [RankController::class, 'cancelMatchmake']);
+Route::post('/api/ranks/record-result', [RankController::class, 'recordResult']);
+Route::post('/api/pvp/rps-choice', [PvpController::class, 'rpsChoice']);
+Route::post('/api/pvp/rps-decide', [PvpController::class, 'rpsDecideTurn']);

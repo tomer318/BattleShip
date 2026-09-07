@@ -154,6 +154,11 @@
                     <span id="sfxText" class="font-mono-tactical text-[10px]">BẬT</span>
                 </button>
 
+                <button onclick="openRankModal()" class="h-9 px-3 rounded-lg border border-amber-500/50 bg-slate-900/90 hover:bg-amber-500/10 text-amber-300 font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce"></span>
+                    <span>⚔️ ĐẤU RANK</span>
+                </button>
+
                 <button onclick="openPvpModal()" class="h-9 px-3 rounded-lg border border-indigo-500/40 bg-slate-900/90 hover:bg-indigo-500/10 text-indigo-300 font-bold uppercase tracking-wider transition flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
                     <span>ĐẤU MẠNG</span>
@@ -465,6 +470,14 @@
                         <span class="text-[9px] text-slate-500 block uppercase">Kim Cương</span>
                         <span id="profGems" class="text-xs font-bold text-fuchsia-400">💎0</span>
                     </div>
+                    <div class="bg-slate-950 px-2.5 py-1 rounded border border-amber-500/50 text-right">
+                        <span class="text-[9px] text-slate-400 block uppercase">Quân Hàm</span>
+                        <span id="profRankHeaderBadge" class="text-xs font-bold text-amber-300">⚓ Thủy Thủ</span>
+                    </div>
+                    <div class="bg-slate-950 px-2.5 py-1 rounded border border-cyan-500/50 text-right">
+                        <span class="text-[9px] text-slate-400 block uppercase">Elo & Thành Tích</span>
+                        <span class="text-xs font-bold text-cyan-300"><span id="profEloHeaderScore">500</span> (<span id="profPvpRecordHeader" class="text-emerald-400">0W-0L</span>)</span>
+                    </div>
                 </div>
             </div>
 
@@ -541,6 +554,195 @@
                     <button type="submit" class="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs uppercase font-bold tracking-wider shadow">Gia Nhập</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Đại Sảnh Danh Vọng & Tìm Trận Rank -->
+    <div id="rankModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-amber-500/60 rounded-2xl max-w-4xl w-full shadow-[0_0_50px_rgba(245,158,11,0.25)] flex flex-col max-h-[92vh] overflow-hidden relative">
+            
+            <!-- Header Modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">👑</span>
+                    <div>
+                        <h2 class="text-lg font-black text-amber-400 uppercase tracking-widest">ĐẠI SẢNH DANH VỌNG HẢI QUÂN</h2>
+                        <span class="text-[10px] text-slate-400 font-mono-tactical uppercase">ĐẤU TRƯỜNG XẾP HẠNG TRỰC TUYẾN // SEASON 2026</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Nút bắt đầu tìm trận rank -->
+                    <button onclick="startRankMatchmaking()" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-black text-xs uppercase px-4 py-2 rounded-lg transition shadow-[0_0_15px_rgba(245,158,11,0.4)] flex items-center gap-2">
+                        <span>⚔️</span> TÌM TRẬN ĐẤU RANK
+                    </button>
+                    <button onclick="closeModal('rankModal')" class="text-slate-400 hover:text-rose-400 text-lg font-mono-tactical">✕</button>
+                </div>
+            </div>
+
+            <!-- Tab Bậc Quân Hàm -->
+            <div id="rankTabsContainer" class="flex flex-wrap gap-1 bg-slate-950 px-6 py-2.5 border-b border-slate-800 text-xs font-bold uppercase">
+                <button onclick="switchRankTab('seaman')" id="rtab-seaman" class="px-3 py-1.5 rounded-lg border transition">⚓ Thủy Thủ</button>
+                <button onclick="switchRankTab('petty_officer')" id="rtab-petty_officer" class="px-3 py-1.5 rounded-lg border transition">🎖️ Hạ Sĩ Quan</button>
+                <button onclick="switchRankTab('ensign')" id="rtab-ensign" class="px-3 py-1.5 rounded-lg border transition">⭐ Sĩ Quan</button>
+                <button onclick="switchRankTab('lieutenant')" id="rtab-lieutenant" class="px-3 py-1.5 rounded-lg border transition">⭐⭐ Thiếu Tá</button>
+                <button onclick="switchRankTab('captain')" id="rtab-captain" class="px-3 py-1.5 rounded-lg border transition">⭐⭐⭐ Đại Tá</button>
+                <button onclick="switchRankTab('fleet_admiral')" id="rtab-fleet_admiral" class="px-3 py-1.5 rounded-lg border transition">👑 Đô Đốc</button>
+            </div>
+
+            <!-- Bảng Xếp Hạng Body -->
+            <div class="overflow-y-auto flex-1 p-6 space-y-3 font-mono-tactical">
+                <div class="flex justify-between items-center text-xs text-slate-400 pb-2 border-b border-slate-800">
+                    <span id="rankTierTitle" class="text-amber-300 font-bold uppercase">Đang tải bậc quân hàm...</span>
+                    <span id="rankTierCount" class="text-slate-500">Tổng số Chỉ Huy: 0</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 border-b border-slate-800 bg-slate-950/40">
+                            <tr>
+                                <th class="py-2 px-3">HẠNG</th>
+                                <th class="py-2 px-3">CHỈ HUY</th>
+                                <th class="py-2 px-3 text-amber-400">ĐIỂM ELO</th>
+                                <th class="py-2 px-3">THẮNG - THUA</th>
+                                <th class="py-2 px-3">TỈ LỆ THẮNG</th>
+                                <th class="py-2 px-3">ĐỘ CHÍNH XÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankLadderBody" class="divide-y divide-slate-800/60 text-slate-300">
+                            <tr><td colspan="6" class="py-4 text-center text-slate-500 italic">Đang đồng bộ vệ tinh trinh sát bảng xếp hạng...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer: Thông số cá nhân -->
+            <div id="rankModalFooter" class="bg-slate-950 border-t border-amber-500/30 px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs font-mono-tactical">
+                <div class="flex items-center gap-3">
+                    <span class="text-base">🎖️</span>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Quân Hàm Của Bạn</span>
+                        <strong id="myRankTierText" class="text-amber-300">--</strong>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Điểm Elo</span>
+                        <strong id="myEloText" class="text-cyan-400">0</strong>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Thành Tích (Thắng/Thua)</span>
+                        <strong id="myRecordText" class="text-emerald-400">0 - 0</strong>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Chính Xác</span>
+                        <strong id="myAccuracyText" class="text-sky-400">0%</strong>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block uppercase">Hạng Trong Bậc</span>
+                        <strong id="myPositionText" class="text-amber-400">#--</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Oẳn Tù Tì Phân Định Quyền Đi Trước (Phong Cách Yu-Gi-Oh! 2003) -->
+    <div id="rpsModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 font-mono-tactical">
+        <div class="bg-slate-900 border-2 border-amber-400 p-6 rounded-2xl max-w-lg w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.35)] relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-amber-400 to-rose-500"></div>
+            
+            <div class="mb-4">
+                <span class="text-3xl">⚔️</span>
+                <h2 class="text-xl font-black text-amber-400 uppercase tracking-widest mt-1">TRANH ĐOẠT QUYỀN KHAI HỎA</h2>
+                <p id="rpsInstruction" class="text-xs text-slate-400 mt-1">Hãy ra quân (Kéo - Búa - Bao) để phân định quyền ưu tiên tác chiến!</p>
+            </div>
+
+            <!-- GIAI ĐOẠN 1: CHỌN KÉO - BÚA - BAO -->
+            <div id="rpsSelectionPhase" class="space-y-5">
+                <div class="flex justify-center items-center gap-6 py-4">
+                    <button onclick="makeRpsChoice('rock')" class="group flex flex-col items-center p-4 rounded-xl bg-slate-950 border-2 border-slate-700 hover:border-amber-400 hover:bg-amber-950/30 transition transform hover:-translate-y-1">
+                        <span class="text-4xl group-hover:scale-110 transition">✊</span>
+                        <span class="text-xs font-bold text-slate-300 mt-2 uppercase group-hover:text-amber-300">BÚA</span>
+                    </button>
+                    <button onclick="makeRpsChoice('scissors')" class="group flex flex-col items-center p-4 rounded-xl bg-slate-950 border-2 border-slate-700 hover:border-amber-400 hover:bg-amber-950/30 transition transform hover:-translate-y-1">
+                        <span class="text-4xl group-hover:scale-110 transition">✌️</span>
+                        <span class="text-xs font-bold text-slate-300 mt-2 uppercase group-hover:text-amber-300">KÉO</span>
+                    </button>
+                    <button onclick="makeRpsChoice('paper')" class="group flex flex-col items-center p-4 rounded-xl bg-slate-950 border-2 border-slate-700 hover:border-amber-400 hover:bg-amber-950/30 transition transform hover:-translate-y-1">
+                        <span class="text-4xl group-hover:scale-110 transition">✋</span>
+                        <span class="text-xs font-bold text-slate-300 mt-2 uppercase group-hover:text-amber-300">BAO</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- GIAI ĐOẠN 2: KẾT QUẢ SO KÈO -->
+            <div id="rpsVersusPhase" class="hidden my-4 py-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-around">
+                <div class="text-center">
+                    <span class="text-[10px] text-cyan-400 block uppercase font-bold">BẠN RA</span>
+                    <span id="rpsMyChoiceEmoji" class="text-4xl block my-1">✊</span>
+                    <span id="rpsMyChoiceText" class="text-xs font-bold text-white uppercase">BÚA</span>
+                </div>
+                <div class="text-xl font-black text-amber-400 italic">VS</div>
+                <div class="text-center">
+                    <span class="text-[10px] text-rose-400 block uppercase font-bold">ĐỐI PHƯƠNG RA</span>
+                    <span id="rpsEnemyChoiceEmoji" class="text-4xl block my-1">✋</span>
+                    <span id="rpsEnemyChoiceText" class="text-xs font-bold text-white uppercase">BAO</span>
+                </div>
+            </div>
+
+            <!-- GIAI ĐOẠN 3: KHI CHIẾN THẮNG -> ĐƯỢC CHỌN ĐI TRƯỚC HAY ĐI SAU -->
+            <div id="rpsTurnChoicePhase" class="hidden space-y-3 pt-2">
+                <p class="text-sm font-black text-emerald-400 uppercase tracking-wider">🎉 BẠN ĐÃ CHIẾN THẮNG TRANH ĐOẠT!</p>
+                <p class="text-xs text-slate-300">Quyền quyết định thuộc về Chỉ Huy. Bạn muốn khai hỏa trước hay sau?</p>
+                <div class="flex gap-3 justify-center pt-2">
+                    <button onclick="decideTurnOrder('first')" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs uppercase transition shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                        ⚡ ĐI TRƯỚC (BẮN TRƯỚC)
+                    </button>
+                    <button onclick="decideTurnOrder('second')" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-black text-xs uppercase transition">
+                        🛡️ ĐI SAU (BẮN SAU)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- GIAI ĐOẠN 4: KHI ĐỐI PHƯƠNG THẮNG -> ĐỐI PHƯƠNG CHỌN -->
+            <div id="rpsEnemyTurnChoicePhase" class="hidden space-y-2 pt-2">
+                <p class="text-sm font-black text-rose-400 uppercase tracking-wider">⚠️ ĐỐI PHƯƠNG CHIẾN THẮNG TRANH ĐOẠT!</p>
+                <p id="rpsEnemyDecisionText" class="text-xs text-slate-300 animate-pulse">Đối phương đang chọn quyền khai hỏa...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tìm Trận Rank -->
+    <div id="rankMatchmakingModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-rose-500/80 p-8 rounded-2xl max-w-md w-full text-center shadow-[0_0_50px_rgba(244,63,94,0.4)] animate-pulse relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-amber-400 to-rose-500"></div>
+            
+            <div id="queueSearchingState">
+                <span class="text-4xl animate-spin inline-block mb-3">📡</span>
+                <h2 class="text-xl font-black text-rose-400 uppercase tracking-widest">ĐANG QUÉT TÍN HIỆU ĐỐI THỦ RANK...</h2>
+                <p class="text-xs text-slate-400 mt-2 mb-6">Hệ thống đang thiết lập phòng chiến đấu công huân tương xứng bậc quân hàm của bạn.</p>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-6 font-mono-tactical">
+                    <span class="text-xs text-slate-500 block uppercase mb-1">Thời gian chờ tìm trận:</span>
+                    <span id="queueTimerText" class="text-2xl font-black text-amber-400">0s / 30s</span>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full mt-3 overflow-hidden">
+                        <div id="queueBar" class="h-full bg-rose-500 transition-all duration-1000 ease-linear" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <button onclick="cancelRankMatchmaking()" class="px-6 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs uppercase rounded-lg border border-slate-700 transition">
+                    Hủy Tìm Trận
+                </button>
+            </div>
+
+            <div id="queueFoundState" class="hidden space-y-4">
+                <span class="text-5xl animate-bounce inline-block">⚠️</span>
+                <h2 class="text-2xl font-black text-rose-400 uppercase tracking-widest animate-ping">PHÁT HIỆN MỤC TIÊU ĐỊCH!</h2>
+                <p class="text-xs text-slate-200 font-mono-tactical">Đã khóa đối thủ tác chiến. Chuẩn bị triển khai hạm đội vào vùng biển đối đầu!</p>
+                <div class="bg-rose-950/60 border border-rose-500 rounded-xl p-3 text-amber-300 font-mono-tactical text-xs font-bold uppercase">
+                    CHUYỂN VÀO TRẬN ĐẤU NGAY LẬP TỨC...
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1070,6 +1272,25 @@
             document.getElementById('profCredits').innerText = `$${(currentUser.credits || 0).toLocaleString()}`;
             document.getElementById('profGems').innerText = `💎${(currentUser.gems || 0).toLocaleString()}`;
 
+            const rankTierMap = {
+                seaman: { name: 'Thủy Thủ', badge: '⚓' },
+                petty_officer: { name: 'Hạ Sĩ Quan', badge: '🎖️' },
+                ensign: { name: 'Sĩ Quan', badge: '⭐' },
+                lieutenant: { name: 'Thiếu Tá', badge: '⭐⭐' },
+                captain: { name: 'Đại Tá', badge: '⭐⭐⭐' },
+                fleet_admiral: { name: 'Đô Đốc', badge: '👑' },
+            };
+            const myRankInfo = rankTierMap[currentUser.rank_tier] || rankTierMap['seaman'];
+            
+            const elRankHeader = document.getElementById('profRankHeaderBadge');
+            if (elRankHeader) elRankHeader.innerText = `${myRankInfo.badge} ${myRankInfo.name}`;
+            
+            const elEloHeader = document.getElementById('profEloHeaderScore');
+            if (elEloHeader) elEloHeader.innerText = (currentUser.elo || 500).toLocaleString();
+            
+            const elRecordHeader = document.getElementById('profPvpRecordHeader');
+            if (elRecordHeader) elRecordHeader.innerText = `${currentUser.pvp_wins || 0}W-${currentUser.pvp_losses || 0}L`;
+
             document.getElementById('shopCredits').innerText = `$${(currentUser.credits || 0).toLocaleString()}`;
             document.getElementById('shopGems').innerText = `💎${(currentUser.gems || 0).toLocaleString()}`;
 
@@ -1208,7 +1429,7 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        if (currentUser) {
+                        if (currentUser && data.inventory) {
                             currentUser.inventory = data.inventory;
                             renderPlayerSkills();
                         }
@@ -1927,20 +2148,11 @@
 
             const data = await res.json();
             currentGameId = data.game_id;
-            phase = 'playing';
-            startTurnTimer(true);
-
-            playSFX('alarm');
-
-            setSurrenderButtonVisibility(true);
-
-            document.getElementById('placementControls').classList.add('hidden');
-            const botGrid = document.getElementById('botGrid');
-            botGrid.classList.remove('opacity-40', 'pointer-events-none');
-            botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-            
-            document.getElementById('gameStatusText').innerText = "HỆ THỐNG RADAR KÍCH HOẠT: Chọn tọa độ trên vùng biển đối phương để khai hỏa!";
             renderBotLoadoutSlots(data.bot_items_count || 3);
+
+            // TẮT KHU VỰC ĐẶT TÀU VÀ MỞ NGAY OẰN TÙ TÌ
+            document.getElementById('placementControls').classList.add('hidden');
+            openRpsModal();
 
             if (selectedDifficulty === 'random') {
                 log(`Đã kích hoạt chế độ NGẪU NHIÊN BÍ MẬT! Đối thủ mang cấp độ chưa rõ.`, 'text-amber-400 font-bold');
@@ -1999,9 +2211,6 @@
                         return;
                     }
 
-                    if (data.shot) {
-                        handlePvpShotResult(data.shot);
-                    }
                 } catch (err) {
                     console.error("Lỗi gửi phát bắn:", err);
                 }
@@ -2098,6 +2307,32 @@
                 clearInterval(turnTimerInterval);
                 document.getElementById('turnTimerContainer').classList.add('hidden');
                 playSFX('victory');
+
+                // NẾU LÀ TRẬN ĐẤU RANK: CẬP NHẬT ELO VÀ KIỂM TRA TOP 5
+                if (isRankMatch && currentRankOpponent) {
+                    const gainedElo = Math.floor(Math.random() * 12) + 18; // +18 đến +30 Elo
+                    if (currentUser) {
+                        currentUser.elo = (currentUser.elo || 500) + gainedElo;
+                        currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
+                        renderUserHUD();
+                    }
+                    log(`[CHIẾN CÔNG RANK] Bạn đánh bại [${currentRankOpponent.name}]! +${gainedElo} ELO!`, 'text-amber-300 font-black');
+
+                    // Gửi cập nhật Elo và kiểm tra Top 5 để mở khóa "Hải Vương Tối Thượng"
+                    fetch('/api/ranks/record-result', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({
+                            opponent_id: currentRankOpponent.id,
+                            opponent_rank: currentRankOpponent.rank,
+                            is_win: true,
+                            gained_elo: gainedElo
+                        })
+                    }).then(() => loadAchievements());
+
+                    isRankMatch = false;
+                }
+
                 document.getElementById('gameStatusText').innerText = "CHIẾN THẮNG CHUNG CUỘC! TOÀN BỘ HẠM ĐỘI ĐỐI PHƯƠNG ĐÃ BỊ TIÊU DIỆT!";
                 if (currentUser) {
                     currentUser.stats = data.user_stats;
@@ -2105,7 +2340,11 @@
                     currentUser.gems = data.total_gems;
                     renderUserHUD();
                 }
-                if (data.stats) showVictoryModal(data.stats, data.earned_credits, data.earned_gems);
+                if (data.stats) {
+                    showVictoryModal(data.stats, data.earned_credits, data.earned_gems);
+                } else {
+                    loadLeaderboard();
+                }
                 return;
             }
 
@@ -2161,6 +2400,13 @@
                 }
 
                 if (phase === 'playing') {
+                    // MỞ KHÓA BÀN CỜ ĐỊCH ĐỂ NGƯỜI CHƠI BẮN TIẾP
+                    const botGrid = document.getElementById('botGrid');
+                    if (botGrid) {
+                        botGrid.classList.remove('pointer-events-none', 'opacity-40');
+                        botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+                    }
+                    document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
                     startTurnTimer(true);
                 }
             }, 350);
@@ -2173,32 +2419,45 @@
             let diff = document.getElementById('difficultySelect').value;
             if (diff === 'random') diff = 'medium';
 
-            document.getElementById('lbDifficultyTitle').innerText = diff.toUpperCase();
+            const titleEl = document.getElementById('lbDifficultyTitle');
+            if (titleEl) titleEl.innerText = diff.toUpperCase();
 
-            const res = await fetch(`/api/leaderboard?difficulty=${diff}`);
-            const data = await res.json();
             const tbody = document.getElementById('leaderboardBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-3 text-center text-slate-500 italic">Chưa có chỉ huy nào đánh bại cấp độ này. Hãy là người đầu tiên!</td></tr>';
-                return;
-            }
+            try {
+                const res = await fetch(`/api/leaderboard?difficulty=${diff}`);
+                const data = await res.json();
 
-            data.forEach((p, i) => {
-                const badgeColor = i === 0 ? 'text-amber-400 font-extrabold' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-slate-500';
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-slate-800/40 transition';
-                row.innerHTML = `
-                    <td class="py-2.5 px-3 ${badgeColor}">#${i + 1}</td>
-                    <td class="py-2.5 px-3 font-bold text-white">${p.player_name}</td>
-                    <td class="py-2.5 px-3 font-bold text-amber-300">${p.score.toLocaleString()}</td>
-                    <td class="py-2.5 px-3 text-cyan-400">${p.duration_seconds}s</td>
-                    <td class="py-2.5 px-3 text-emerald-400">${p.accuracy}%</td>
-                    <td class="py-2.5 px-3 text-sky-400">${p.fleet_health}%</td>
-                `;
-                tbody.appendChild(row);
-            });
+                if (!Array.isArray(data) || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500 font-mono-tactical italic">Chưa có dữ liệu tác chiến cho cấp độ này. Hãy chiến thắng để ghi danh!</td></tr>';
+                    return;
+                }
+
+                data.forEach((p, i) => {
+                    const badgeColor = i === 0 ? 'text-amber-400 font-black' : i === 1 ? 'text-slate-300 font-bold' : i === 2 ? 'text-amber-600 font-bold' : 'text-slate-500';
+                    const safeScore = Number(p.score || 0).toLocaleString();
+                    const safeDuration = Number(p.duration_seconds || 0);
+                    const safeAcc = Number(p.accuracy || 0);
+                    const safeHp = Number(p.fleet_health || 0);
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-800/40 transition text-xs font-mono-tactical';
+                    row.innerHTML = `
+                        <td class="py-2.5 px-3 ${badgeColor}">#${i + 1}</td>
+                        <td class="py-2.5 px-3 font-bold text-white">${p.player_name || 'Chỉ Huy Ẩn Danh'}</td>
+                        <td class="py-2.5 px-3 font-bold text-amber-300">${safeScore}</td>
+                        <td class="py-2.5 px-3 text-cyan-400">${safeDuration}s</td>
+                        <td class="py-2.5 px-3 text-emerald-400">${safeAcc}%</td>
+                        <td class="py-2.5 px-3 text-sky-400">${safeHp}%</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Lỗi tải bảng vinh danh:", err);
+                tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500 font-mono-tactical italic">Không thể kết nối máy chủ bảng vinh danh.</td></tr>';
+            }
         }
 
         document.getElementById('difficultySelect').addEventListener('change', loadLeaderboard);
@@ -2339,12 +2598,16 @@
                 handlePlayerJoined(data);
             });
 
-            // LẮNG NGHE KHI CẢ 2 ĐÃ BẤM SẴN SÀNG
+            // LẮNG NGHE KHI CẢ 2 ĐÃ BẤM SẴN SÀNG -> MỞ OẲN TÙ TÌ
             pvpEchoChannel.bind('pvp.game.started', function(data) {
-                onBothPlayersReady(data.room);
+                if (data && data.room) {
+                    onBothPlayersReady(data.room);
+                }
             });
             pvpEchoChannel.bind('.pvp.game.started', function(data) {
-                onBothPlayersReady(data.room);
+                if (data && data.room) {
+                    onBothPlayersReady(data.room);
+                }
             });
 
             // LẮNG NGHE KHI CÓ PHÁT BẮN PVP
@@ -2359,6 +2622,15 @@
             pvpEchoChannel.unbind('pvp.skill.used');
             pvpEchoChannel.bind('pvp.skill.used', function(data) {
                 handlePvpSkillEffect(data.skillData);
+            });
+
+            pvpEchoChannel.unbind('pvp.rps.event');
+            pvpEchoChannel.bind('pvp.rps.event', function(data) {
+                handlePvpRpsEvent(data.rpsData || data);
+            });
+            pvpEchoChannel.unbind('.pvp.rps.event');
+            pvpEchoChannel.bind('.pvp.rps.event', function(data) {
+                handlePvpRpsEvent(data.rpsData || data);
             });
         }
 
@@ -2433,53 +2705,22 @@
         }
 
         function onBothPlayersReady(room) {
-            phase = 'playing';
             gameMode = 'pvp'; 
             currentRoomData = room;
-            playSFX('alarm');
-
-            setSurrenderButtonVisibility(true);
-
-            renderBotLoadoutSlots(4);
-
             if (room && room.room_code) currentPvpRoomCode = room.room_code;
 
-            // Ẩn thanh công cụ dàn trận
-            document.getElementById('placementControls').classList.add('hidden');
-
-            const isMyTurn = (myPvpRole === room.current_turn);
-            const botGrid = document.getElementById('botGrid');
-
-            // Gỡ bỏ hoàn toàn trạng thái mờ và khóa tương tác
-            botGrid.classList.remove('opacity-40', 'pointer-events-none');
-            botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-
-            // Gán lại onclick và cursor cho toàn bộ 100 ô đối phương để nhận click
-            for (let y = 0; y < 10; y++) {
-                for (let x = 0; x < 10; x++) {
-                    const c = document.getElementById(`b-${x}-${y}`);
-                    if (c) {
-                        c.onclick = () => fireAt(x, y);
-                        c.classList.add('cursor-pointer', 'hover:border-rose-500/60');
-                    }
-                }
-            }
-
-            if (isMyTurn) {
-                botGrid.classList.remove('pointer-events-none');
-                document.getElementById('gameStatusText').innerText = "TRẬN ĐẤU BẮT ĐẦU! LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
-            } else {
-                botGrid.classList.add('pointer-events-none');
-                document.getElementById('gameStatusText').innerText = "TRẬN ĐẤU BẮT ĐẦU! ĐỐI PHƯƠNG KHAI HỎA TRƯỚC, HÃY CHỜ ĐỢI...";
-            }
-
-            log(`Cả hai chỉ huy đã sẵn sàng! Trận chiến hải quân chính thức bùng nổ!`, 'text-emerald-400 font-extrabold text-sm');
-            triggerSkillAlert("HAI BÊN ĐÃ SẴN SÀNG - KHAI HỎA!", false);
-
-            startTurnTimer(isMyTurn);
+            // Ẩn thanh dàn trận và bật bắt buộc Modal Oẳn Tù Tì ở cả 2 màn hình
+            const placementControl = document.getElementById('placementControls');
+            if (placementControl) placementControl.classList.add('hidden');
+            
+            renderBotLoadoutSlots(4);
+            openRpsModal();
         }
 
+        let isPvpResultRecorded = false;
+
         function startPvpMatch(room, role = null) {
+            isPvpResultRecorded = false;
             gameMode = 'pvp';
             if (role) myPvpRole = role;
             phase = 'setup';
@@ -2572,14 +2813,34 @@
                 document.getElementById('turnTimerContainer').classList.add('hidden');
                 setSurrenderButtonVisibility(false);
 
-                if (shot.winner === myPvpRole) {
+                const isIWin = (shot.winner === myPvpRole);
+                fetch('/api/ranks/record-result', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({
+                        is_win: isIWin,
+                        gained_elo: isIWin ? 20 : 0
+                    })
+                }).then(async res => {
+                    const data = await res.json();
+                    if (data.status === 'success' && currentUser) {
+                        currentUser.elo = data.elo;
+                        currentUser.rank_tier = data.rank_tier;
+                        if (isIWin) currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
+                        else currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
+                        renderUserHUD();
+                    }
+                    loadAchievements();
+                });
+
+                if (isIWin) {
                     playSFX('victory');
-                    document.getElementById('gameStatusText').innerText = "ĐỐI THỦ ĐÃ BỎ CUỘC / ĐẦU HÀNG! CHIẾN THẮNG DÀNH CHO BẠN!";
-                    log(`[CHIẾN THẮNG] ${shot.msg}`, "text-amber-300 font-black text-sm");
+                    document.getElementById('gameStatusText').innerText = "ĐỐI THỦ ĐÃ BỎ CUỘC / ĐẦU HÀNG! CHIẾN THẮNG DÀNH CHO BẠN! (+20 ELO)";
+                    log(`[CHIẾN THẮNG] ${shot.msg} (+20 ELO)`, "text-amber-300 font-black text-sm");
                     triggerSkillAlert("ĐỐI THỦ ĐẦU HÀNG - BẠN CHIẾN THẮNG!", false);
                 } else {
-                    document.getElementById('gameStatusText').innerText = "BẠN ĐÃ ĐẦU HÀNG / RỜI TRẬN! KẾT QUẢ: THẤT BẠI.";
-                    log(`[THẤT BẠI] ${shot.msg}`, "text-rose-500 font-bold text-sm");
+                    document.getElementById('gameStatusText').innerText = "BẠN ĐÃ ĐẦU HÀNG / RỜI TRẬN! KẾT QUẢ: THẤT BẠI. (-15 ELO)";
+                    log(`[THẤT BẠI] ${shot.msg} (-15 ELO)`, "text-rose-500 font-bold text-sm");
                 }
                 return;
             }
@@ -2587,20 +2848,51 @@
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
-                document.getElementById('turnTimerContainer').classList.add('hidden');
-
+                
+                // Khóa hoàn toàn bảng cờ và tắt đồng hồ
+                const timerEl = document.getElementById('turnTimerContainer');
+                if (timerEl) timerEl.classList.add('hidden');
+                
+                const botGrid = document.getElementById('botGrid');
+                if (botGrid) {
+                    botGrid.classList.add('pointer-events-none', 'opacity-60');
+                }
                 setSurrenderButtonVisibility(false);
 
-                loadAchievements();
+                const isIWin = (shot.winner === myPvpRole);
 
-                if (shot.winner === myPvpRole) {
+                if (!isPvpResultRecorded) {
+                    isPvpResultRecorded = true;
+
+                    fetch('/api/ranks/record-result', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({
+                            is_win: isIWin,
+                            gained_elo: isIWin ? 25 : 0
+                        })
+                    }).then(async res => {
+                        const data = await res.json();
+                        if (data.status === 'success' && currentUser) {
+                            currentUser.elo = data.elo;
+                            currentUser.rank_tier = data.rank_tier;
+                            if (isIWin) currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
+                            else currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
+                            renderUserHUD();
+                        }
+                        loadAchievements();
+                    });
+                }
+
+                if (isIWin) {
                     playSFX('victory');
-                    document.getElementById('gameStatusText').innerText = "CHIẾN THẮNG! BẠN ĐÃ BẮN HẠ TOÀN BỘ HẠM ĐỘI ĐỐI PHƯƠNG!";
-                    log("[CHIẾN CÔNG PVP] Bạn đã giành chiến thắng chung cuộc!", "text-amber-300 font-black text-sm");
-                    triggerSkillAlert("CHIẾN THẮNG HUY HOÀNG TRƯỚC ĐỐI THỦ!", false);
+                    document.getElementById('gameStatusText').innerText = "🏆 CHIẾN THẮNG CHUNG CUỘC! TOÀN BỘ HẠM ĐỘI ĐỐI PHƯƠNG ĐÃ BỊ TIÊU DIỆT! (+25 ELO)";
+                    log("[CHIẾN CÔNG PVP] Bạn đã giành chiến thắng chung cuộc! (+25 ELO)", "text-amber-300 font-black text-sm");
+                    triggerSkillAlert("🏆 CHIẾN THẮNG HUY HOÀNG! BẠN ĐƯỢC +25 ELO", false);
                 } else {
-                    document.getElementById('gameStatusText').innerText = "THẤT BẠI! TOÀN BỘ TÀU CỦA BẠN ĐÃ BỊ ĐỐI PHƯƠNG BẮN CHÌM!";
-                    log("[THẤT BẠI PVP] Hạm đội của bạn đã bị tiêu diệt.", "text-rose-500 font-bold text-sm");
+                    document.getElementById('gameStatusText').innerText = "☠️ THẤT BẠI TÁC CHIẾN! TOÀN BỘ HẠM ĐỘI CỦA BẠN ĐÃ BỊ ĐỐI PHƯƠNG BẮN CHÌM! (-15 ELO)";
+                    log("[THẤT BẠI PVP] Hạm đội của bạn đã bị tiêu diệt. (-15 ELO)", "text-rose-500 font-bold text-sm");
+                    triggerSkillAlert("☠️ THẤT BẠI! TOÀN BỘ HẠM ĐỘI BỊ BẮN HẠ (-15 ELO)", true);
                 }
                 return;
             }
@@ -2731,6 +3023,413 @@
                     }
                 }
             }
+        }
+
+        let currentRankTier = 'seaman';
+        let rankMatchmakingTimer = null;
+        let rankSecondsElapsed = 0;
+        const RANK_MAX_WAIT_SECONDS = 25; 
+        let isRankMatch = false;
+        let currentRankOpponent = null;
+
+        /* ===================================================
+           CƠ CHẾ OẲN TÙ TÌ TRANH QUYỀN ĐI TRƯỚC (YUGIOH STYLE)
+           =================================================== */
+        const RPS_EMOJIS = { rock: '✊', scissors: '✌️', paper: '✋' };
+        const RPS_NAMES = { rock: 'BÚA', scissors: 'KÉO', paper: 'BAO' };
+
+        function openRpsModal() {
+            document.getElementById('rpsSelectionPhase').classList.remove('hidden');
+            document.getElementById('rpsVersusPhase').classList.add('hidden');
+            document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
+            document.getElementById('rpsEnemyTurnChoicePhase').classList.add('hidden');
+            document.getElementById('rpsInstruction').innerText = 'Hãy ra quân (Kéo - Búa - Bao) để phân định quyền ưu tiên tác chiến!';
+            document.getElementById('rpsInstruction').className = 'text-xs text-slate-400 mt-1';
+            openModal('rpsModal');
+            playSFX('alarm');
+        }
+
+        function makeRpsChoice(myChoice) {
+            playSFX('click');
+
+            // NẾU LÀ ĐẤU MẠNG / RANK (2 NGƯỜI THẬT)
+            if (gameMode === 'pvp') {
+                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                document.getElementById('rpsInstruction').innerText = `BẠN ĐÃ RA [${RPS_NAMES[myChoice]}]! ĐANG CHỜ ĐỐI THỦ RA QUÂN...`;
+                document.getElementById('rpsInstruction').className = 'text-xs text-amber-300 font-bold mt-1 animate-pulse';
+                document.getElementById('rpsSelectionPhase').classList.add('hidden');
+
+                fetch('/api/pvp/rps-choice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ room_code: roomCode, choice: myChoice })
+                });
+                return;
+            }
+
+            // NẾU ĐÁNH VỚI BOT (PVE)
+            const choices = ['rock', 'scissors', 'paper'];
+            const botChoice = choices[Math.floor(Math.random() * choices.length)];
+
+            document.getElementById('rpsMyChoiceEmoji').innerText = RPS_EMOJIS[myChoice];
+            document.getElementById('rpsMyChoiceText').innerText = RPS_NAMES[myChoice];
+            document.getElementById('rpsEnemyChoiceEmoji').innerText = RPS_EMOJIS[botChoice];
+            document.getElementById('rpsEnemyChoiceText').innerText = RPS_NAMES[botChoice];
+
+            document.getElementById('rpsSelectionPhase').classList.add('hidden');
+            document.getElementById('rpsVersusPhase').classList.remove('hidden');
+
+            if (myChoice === botChoice) {
+                document.getElementById('rpsInstruction').innerText = 'HÒA NHAU! HÃY RA QUÂN LẠI LẦN NỮA!';
+                document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
+                setTimeout(() => {
+                    document.getElementById('rpsSelectionPhase').classList.remove('hidden');
+                    document.getElementById('rpsVersusPhase').classList.add('hidden');
+                }, 1400);
+                return;
+            }
+
+            const winConditions = { rock: 'scissors', scissors: 'paper', paper: 'rock' };
+            const isPlayerWin = (winConditions[myChoice] === botChoice);
+
+            if (isPlayerWin) {
+                playSFX('victory');
+                document.getElementById('rpsTurnChoicePhase').classList.remove('hidden');
+            } else {
+                playSFX('hit');
+                document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
+                setTimeout(() => {
+                    const botWantsFirst = Math.random() < 0.85;
+                    const botChoiceText = botWantsFirst ? "ĐI TRƯỚC (BẮN TRƯỚC)" : "ĐI SAU (BẮN SAU)";
+                    document.getElementById('rpsEnemyDecisionText').innerText = `Đối phương đã quyết định: ${botChoiceText}!`;
+                    setTimeout(() => {
+                        closeModal('rpsModal');
+                        finalizeBattleStart(botWantsFirst ? false : true);
+                    }, 1500);
+                }, 1200);
+            }
+        }
+
+        function decideTurnOrder(choice) {
+            playSFX('victory');
+            closeModal('rpsModal');
+
+            // NẾU LÀ TRẬN PVP ONLINE
+            if (gameMode === 'pvp') {
+                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                fetch('/api/pvp/rps-decide', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ room_code: roomCode, choice: choice })
+                });
+                return;
+            }
+
+            // NẾU LÀ ĐÁNH BOT
+            finalizeBattleStart(choice === 'first');
+        }
+
+        function handlePvpRpsEvent(data) {
+            if (!data) return;
+
+            if (data.type === 'result') {
+                const myChoice = (myPvpRole === 'player1') ? data.p1_choice : data.p2_choice;
+                const enemyChoice = (myPvpRole === 'player1') ? data.p2_choice : data.p1_choice;
+
+                document.getElementById('rpsMyChoiceEmoji').innerText = RPS_EMOJIS[myChoice];
+                document.getElementById('rpsMyChoiceText').innerText = RPS_NAMES[myChoice];
+                document.getElementById('rpsEnemyChoiceEmoji').innerText = RPS_EMOJIS[enemyChoice];
+                document.getElementById('rpsEnemyChoiceText').innerText = RPS_NAMES[enemyChoice];
+
+                document.getElementById('rpsSelectionPhase').classList.add('hidden');
+                document.getElementById('rpsVersusPhase').classList.remove('hidden');
+
+                if (data.outcome === 'tie') {
+                    playSFX('miss');
+                    document.getElementById('rpsInstruction').innerText = 'HAI BÊN HÒA NHAU! HÃY RA QUÂN LẠI!';
+                    document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
+                    setTimeout(() => {
+                        document.getElementById('rpsSelectionPhase').classList.remove('hidden');
+                        document.getElementById('rpsVersusPhase').classList.add('hidden');
+                    }, 1500);
+                    return;
+                }
+
+                const iAmWinner = (data.winner_role === myPvpRole);
+                if (iAmWinner) {
+                    playSFX('victory');
+                    document.getElementById('rpsTurnChoicePhase').classList.remove('hidden');
+                } else {
+                    playSFX('alarm');
+                    document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
+                    document.getElementById('rpsEnemyDecisionText').innerText = "Đối phương chiến thắng tranh đoạt! Đang chờ đối thủ quyết định lượt đi...";
+                }
+            }
+
+            if (data.type === 'turn_decided') {
+                closeModal('rpsModal');
+                realStartPvpBattle(data.starter_role);
+            }
+        }
+
+        function realStartPvpBattle(starterRole) {
+            phase = 'playing';
+            playSFX('alarm');
+            setSurrenderButtonVisibility(true);
+
+            const isMyTurn = (myPvpRole === starterRole);
+            const botGrid = document.getElementById('botGrid');
+            botGrid.classList.remove('opacity-40', 'pointer-events-none');
+            botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const c = document.getElementById(`b-${x}-${y}`);
+                    if (c) {
+                        c.onclick = () => fireAt(x, y);
+                        c.classList.add('cursor-pointer', 'hover:border-rose-500/60');
+                    }
+                }
+            }
+
+            if (isMyTurn) {
+                botGrid.classList.remove('pointer-events-none');
+                document.getElementById('gameStatusText').innerText = "BẠN KHAI HỎA TRƯỚC: Chọn tọa độ trên vùng biển đối phương để khai hỏa!";
+            } else {
+                botGrid.classList.add('pointer-events-none');
+                document.getElementById('gameStatusText').innerText = "ĐỐI THỦ KHAI HỎA TRƯỚC: Đang chờ đối thủ ngắm bắn...";
+            }
+
+            log(`Trận chiến chính thức bắt đầu! ${isMyTurn ? 'BẠN BẮN TRƯỚC!' : 'ĐỐI THỦ BẮN TRƯỚC!'}`, 'text-emerald-400 font-extrabold text-sm');
+            triggerSkillAlert(isMyTurn ? "BẠN KHAI HỎA TRƯỚC!" : "ĐỐI THỦ BẮN TRƯỚC!", !isMyTurn);
+            startTurnTimer(isMyTurn);
+        }
+
+        function finalizeBattleStart(isPlayerTurnFirst) {
+            phase = 'playing';
+            setSurrenderButtonVisibility(true);
+
+            const botGrid = document.getElementById('botGrid');
+            botGrid.classList.remove('opacity-40', 'pointer-events-none');
+            botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+
+            if (isPlayerTurnFirst) {
+                botGrid.classList.remove('pointer-events-none');
+                document.getElementById('gameStatusText').innerText = "BẠN KHAI HỎA TRƯỚC: Chọn tọa độ trên vùng biển đối phương để khai hỏa!";
+                log("Quyền khai hỏa: BẠN BẮN TRƯỚC!", "text-cyan-400 font-extrabold");
+                triggerSkillAlert("BẠN KHAI HỎA TRƯỚC!", false);
+                startTurnTimer(true);
+            } else {
+                botGrid.classList.add('pointer-events-none');
+                document.getElementById('gameStatusText').innerText = "ĐỐI PHƯƠNG KHAI HỎA TRƯỚC: Đang chờ đối thủ ngắm bắn...";
+                log("Quyền khai hỏa: ĐỐI PHƯƠNG BẮN TRƯỚC!", "text-rose-400 font-extrabold");
+                triggerSkillAlert("ĐỐI PHƯƠNG BẮN TRƯỚC!", true);
+                startTurnTimer(false);
+
+                setTimeout(async () => {
+                    if (currentGameId && phase === 'playing') {
+                        const res = await fetch(`/api/games/${currentGameId}/fire`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            body: JSON.stringify({ x: -1, y: -1, timeout: true })
+                        });
+                        const data = await res.json();
+                        if (data.bot_shot) handleBotShotResult(data.bot_shot);
+                    }
+                }, 1200);
+            }
+        }
+
+        function openRankModal() {
+            if (!currentUser) {
+                openModal('loginModal');
+                return;
+            }
+            fetchRankLadder(currentRankTier);
+            openModal('rankModal');
+        }
+
+        function switchRankTab(tierKey) {
+            currentRankTier = tierKey;
+            playSFX('click');
+            fetchRankLadder(tierKey);
+        }
+
+        async function fetchRankLadder(tier) {
+            try {
+                const res = await fetch(`/api/ranks/ladder?tier=${tier}`);
+                const data = await res.json();
+                if (res.ok) {
+                    renderRankLadderUI(data);
+                }
+            } catch (err) {
+                console.error("Lỗi tải bảng xếp hạng rank:", err);
+            }
+        }
+
+        function renderRankLadderUI(data) {
+            // Cập nhật giao diện các Tab
+            const allTiers = ['seaman', 'petty_officer', 'ensign', 'lieutenant', 'captain', 'fleet_admiral'];
+            allTiers.forEach(t => {
+                const btn = document.getElementById(`rtab-${t}`);
+                if (btn) {
+                    if (t === data.current_tier) {
+                        btn.className = 'px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-amber-500/20 text-amber-300 transition shadow-[0_0_10px_rgba(245,158,11,0.3)]';
+                    } else {
+                        btn.className = 'px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 transition';
+                    }
+                }
+            });
+
+            document.getElementById('rankTierTitle').innerText = `BẬC QUÂN HÀM: ${data.tier_info.name.toUpperCase()}`;
+            document.getElementById('rankTierCount').innerText = `Tổng số Chỉ Huy: ${data.ladder.length}`;
+
+            const tbody = document.getElementById('rankLadderBody');
+            tbody.innerHTML = '';
+
+            if (data.ladder.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500 italic">Chưa có chỉ huy nào trong bậc quân hàm này.</td></tr>';
+            } else {
+                data.ladder.forEach(p => {
+                    const rankColor = p.rank === 1 ? 'text-amber-400 font-black text-sm' : p.rank === 2 ? 'text-slate-300 font-bold' : p.rank === 3 ? 'text-amber-600 font-bold' : 'text-slate-400';
+                    const nameStyle = p.is_me ? 'text-cyan-300 font-extrabold underline decoration-cyan-400' : p.is_smurf ? 'text-rose-400 font-bold' : 'text-white';
+                    const smurfBadge = p.is_smurf ? ' <span class="text-[9px] px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500">SMURF ⚡</span>' : '';
+                    const meBadge = p.is_me ? ' <span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500">BẠN</span>' : '';
+                    
+                    const row = document.createElement('tr');
+                    row.className = p.is_me ? 'bg-cyan-950/30 hover:bg-cyan-950/50 transition' : 'hover:bg-slate-800/40 transition';
+                    row.innerHTML = `
+                        <td class="py-2.5 px-3 ${rankColor}">#${p.rank}</td>
+                        <td class="py-2.5 px-3 font-bold ${nameStyle}">${p.badge} ${p.name}${smurfBadge}${meBadge}</td>
+                        <td class="py-2.5 px-3 font-black text-amber-300">${p.elo.toLocaleString()}</td>
+                        <td class="py-2.5 px-3 text-slate-300">${p.wins} - ${p.losses}</td>
+                        <td class="py-2.5 px-3 text-emerald-400">${p.win_rate}%</td>
+                        <td class="py-2.5 px-3 text-sky-400">${p.accuracy}%</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Cập nhật Footer phẳng ngang cá nhân
+            if (data.my_stats) {
+                document.getElementById('myRankTierText').innerText = `${data.my_stats.tier_badge} ${data.my_stats.tier_name}`;
+                document.getElementById('myEloText').innerText = data.my_stats.elo.toLocaleString();
+                document.getElementById('myRecordText').innerText = `${data.my_stats.wins} - ${data.my_stats.losses} (${data.my_stats.win_rate}%)`;
+                document.getElementById('myAccuracyText').innerText = `${data.my_stats.accuracy}%`;
+                document.getElementById('myPositionText').innerText = `#${data.my_stats.rank_number}`;
+            }
+        }
+
+        // --- HỆ THỐNG HÀNG CHỜ ĐẤU RANK (ƯU TIÊN GHÉP 2 NGƯỜI THẬT) ---
+        function startRankMatchmaking() {
+            closeModal('rankModal');
+            document.getElementById('queueSearchingState').classList.remove('hidden');
+            document.getElementById('queueFoundState').classList.add('hidden');
+            document.getElementById('rankMatchmakingModal').classList.remove('hidden');
+            
+            playSFX('alarm');
+            rankSecondsElapsed = 0;
+            updateQueueHUD();
+
+            // Gửi vào hàng chờ ngay lập tức
+            pollRankMatchmaking(false);
+
+            clearInterval(rankMatchmakingTimer);
+            rankMatchmakingTimer = setInterval(async () => {
+                rankSecondsElapsed++;
+                updateQueueHUD();
+
+                // Chỉ ghép bot khi ĐÃ VƯỢT QUÁ 25 GIÂY
+                if (rankSecondsElapsed >= RANK_MAX_WAIT_SECONDS) {
+                    clearInterval(rankMatchmakingTimer);
+                    await pollRankMatchmaking(true);
+                } else {
+                    // Trong 25 giây đầu: CỨ 1.5 GIÂY HỎI SERVER TÌM NGƯỜI THẬT
+                    if (rankSecondsElapsed % 2 === 0 || rankSecondsElapsed === 1) {
+                        await pollRankMatchmaking(false);
+                    }
+                }
+            }, 1000);
+        }
+
+        async function pollRankMatchmaking(forceBot = false) {
+            try {
+                const res = await fetch('/api/ranks/matchmake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ force_bot: forceBot })
+                });
+                const data = await res.json();
+
+                // NẾU GHÉP THÀNH CÔNG VỚI NGƯỜI THẬT
+                if (data.status === 'matched_real') {
+                    clearInterval(rankMatchmakingTimer);
+                    handleRankMatchedSuccess(data.opponent, data.room, data.role, false);
+                    return;
+                }
+
+                // NẾU HẾT 25S VÀ GHÉP VỚI BOT
+                if (data.status === 'matched_bot') {
+                    clearInterval(rankMatchmakingTimer);
+                    handleRankMatchedSuccess(data.opponent, null, null, true);
+                    return;
+                }
+            } catch (err) {
+                console.error("Lỗi hàng chờ rank:", err);
+            }
+        }
+
+        function handleRankMatchedSuccess(opponent, room = null, role = null, isBot = false) {
+            playSFX('alarm');
+            document.getElementById('queueSearchingState').classList.add('hidden');
+            document.getElementById('queueFoundState').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('rankMatchmakingModal').classList.add('hidden');
+
+                if (!isBot && room) {
+                    // VÀO TRẬN ĐẤU PVP ONLINE VỚI NGƯỜI THẬT
+                    currentPvpRoomCode = room.room_code;
+                    currentRoomData = room;
+                    myPvpRole = role;
+                    subscribeToRoom(room.room_code);
+                    startPvpMatch(room, role);
+                    log(`[ĐẤU RANK TRỰC TUYẾN] Đã kết nối với Chỉ Huy [${opponent.name}]! Bắt đầu dàn trận!`, 'text-emerald-400 font-extrabold text-sm');
+                    triggerSkillAlert(`ĐỐI ĐẦU CHỈ HUY TRỰC TUYẾN: ${opponent.name.toUpperCase()}`, false);
+                } else {
+                    // VÀO TRẬN ĐẤU VỚI BOT RANK
+                    isRankMatch = true;
+                    currentRankOpponent = opponent;
+                    gameMode = 'pve';
+                    phase = 'setup';
+                    resetSetup();
+                    gameMode = 'pve';
+
+                    document.getElementById('difficultySelect').value = opponent.bot_difficulty || 'medium';
+                    document.getElementById('gameStatusText').innerText = `TRẬN ĐẤU RANK: Đối đầu [${opponent.name}] (Elo: ${opponent.elo})! Hãy dàn trận và bấm VÀO TRẬN!`;
+                    log(`[ĐẤU RANK] Đã ghép trận: Chỉ Huy [${opponent.name}] - Elo: ${opponent.elo}!`, 'text-amber-300 font-black text-sm');
+                    triggerSkillAlert(`ĐÃ TÌM THẤY ĐỐI THỦ: ${opponent.name.toUpperCase()}`, false);
+                }
+            }, 1800);
+        }
+
+        async function cancelRankMatchmaking() {
+            clearInterval(rankMatchmakingTimer);
+            document.getElementById('rankMatchmakingModal').classList.add('hidden');
+            playSFX('click');
+            try {
+                await fetch('/api/ranks/cancel-matchmake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+                });
+            } catch (e) {}
+            log('Đã hủy tìm kiếm trận đấu Rank.', 'text-slate-400');
+        }
+
+        function updateQueueHUD() {
+            const percent = Math.min(100, (rankSecondsElapsed / RANK_MAX_WAIT_SECONDS) * 100);
+            document.getElementById('queueTimerText').innerText = `${rankSecondsElapsed}s / ${RANK_MAX_WAIT_SECONDS}s`;
+            document.getElementById('queueBar').style.width = `${percent}%`;
         }
     </script>
 </body>

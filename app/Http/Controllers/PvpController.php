@@ -112,8 +112,7 @@ class PvpController extends Controller
         }
 
         if ($room->p1_ready && $room->p2_ready) {
-            $room->status = 'playing';
-            $room->current_turn = 'player1';
+            $room->status = 'rps_pending';
             $room->save();
 
             event(new PvpGameStarted($room));
@@ -255,12 +254,38 @@ class PvpController extends Controller
         }
 
         // Kiểm tra toàn bộ hạm đội đối thủ
-        $enemyDestroyed = true;
-        foreach ($enemyShips as $s) {
-            if (($s['hits'] ?? 0) < $s['size']) {
-                $enemyDestroyed = false;
-                break;
+        $hitShotMap = [];
+        foreach ($myShots as $shot) {
+            if (in_array($shot['result'] ?? '', ['hit', 'sunk'])) {
+                $hitShotMap["{$shot['x']},{$shot['y']}"] = true;
             }
+        }
+
+        $enemyDestroyed = true;
+        foreach ($enemyShips as &$s) {
+            $shipHitCount = 0;
+            $shipCoords = $s['coordinates'] ?? [];
+            $shipSize = count($shipCoords);
+
+            foreach ($shipCoords as $coord) {
+                if (isset($hitShotMap["{$coord['x']},{$coord['y']}"])) {
+                    $shipHitCount++;
+                }
+            }
+
+            // Đồng bộ lại chuẩn xác số hit thực tế của tàu
+            $s['hits'] = $shipHitCount;
+
+            if ($shipHitCount < $shipSize) {
+                $enemyDestroyed = false;
+            }
+        }
+        unset($s);
+
+        if ($isP1) {
+            $room->p2_ships = $enemyShips;
+        } else {
+            $room->p1_ships = $enemyShips;
         }
 
         if ($enemyDestroyed) {
@@ -707,5 +732,116 @@ class PvpController extends Controller
             'status' => 'success',
             'room'   => $room,
         ]);
+    }
+
+    public function rpsChoice(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Chưa đăng nhập!'], 401);
+
+        $roomCode = $request->input('room_code');
+        $choice = $request->input('choice'); // 'rock', 'scissors', 'paper'
+
+        $room = Room::where('room_code', $roomCode)->first();
+        if (!$room) return response()->json(['error' => 'Không tìm thấy phòng!'], 404);
+
+        $isP1 = ($room->player1_id === $user->id);
+        $isP2 = ($room->player2_id === $user->id);
+        if (!$isP1 && !$isP2) return response()->json(['error' => 'Không thuộc phòng này!'], 403);
+
+        $p1Skills = is_array($room->p1_active_skills) ? $room->p1_active_skills : [];
+        $p2Skills = is_array($room->p2_active_skills) ? $room->p2_active_skills : [];
+
+        if ($isP1) {
+            $p1Skills['rps_choice'] = $choice;
+        } else {
+            $p2Skills['rps_choice'] = $choice;
+        }
+
+        $room->p1_active_skills = $p1Skills;
+        $room->p2_active_skills = $p2Skills;
+        $room->save();
+
+        $room->refresh();
+        $currentP1 = $room->p1_active_skills['rps_choice'] ?? null;
+        $currentP2 = $room->p2_active_skills['rps_choice'] ?? null;
+
+        if (!empty($currentP1) && !empty($currentP2)) {
+            $c1 = $currentP1;
+            $c2 = $currentP2;
+
+            $winConditions = ['rock' => 'scissors', 'scissors' => 'paper', 'paper' => 'rock'];
+
+            $outcome = 'tie';
+            $winnerRole = null;
+
+            if ($c1 !== $c2) {
+                if ($winConditions[$c1] === $c2) {
+                    $outcome = 'p1_win';
+                    $winnerRole = 'player1';
+                } else {
+                    $outcome = 'p2_win';
+                    $winnerRole = 'player2';
+                }
+            }
+
+            // Reset lựa chọn để nếu hòa có thể chọn tiếp
+            $p1Skills = is_array($room->p1_active_skills) ? $room->p1_active_skills : [];
+            $p2Skills = is_array($room->p2_active_skills) ? $room->p2_active_skills : [];
+            $p1Skills['rps_choice'] = null;
+            $p2Skills['rps_choice'] = null;
+            
+            $room->p1_active_skills = $p1Skills;
+            $room->p2_active_skills = $p2Skills;
+            $room->save();
+
+            $rpsPayload = [
+                'type'        => 'result',
+                'p1_choice'   => $c1,
+                'p2_choice'   => $c2,
+                'outcome'     => $outcome,
+                'winner_role' => $winnerRole,
+            ];
+
+            event(new \App\Events\PvpRpsEvent($room, $rpsPayload));
+
+            return response()->json(['status' => 'both_picked', 'data' => $rpsPayload]);
+        }
+
+        return response()->json(['status' => 'waiting_other']);
+    }
+
+    public function rpsDecideTurn(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Chưa đăng nhập!'], 401);
+
+        $roomCode = $request->input('room_code');
+        $choice = $request->input('choice'); // 'first' hoặc 'second'
+
+        $room = Room::where('room_code', $roomCode)->first();
+        if (!$room) return response()->json(['error' => 'Không tìm thấy phòng!'], 404);
+
+        $isP1 = ($room->player1_id === $user->id);
+        $myRole = $isP1 ? 'player1' : 'player2';
+        $enemyRole = $isP1 ? 'player2' : 'player1';
+
+        // Lượt đi đầu tiên
+        $starterRole = ($choice === 'first') ? $myRole : $enemyRole;
+
+        $room->status = 'playing';
+        $room->current_turn = $starterRole;
+        $room->save();
+
+        $rpsPayload = [
+            'type'         => 'turn_decided',
+            'starter_role' => $starterRole,
+        ];
+
+        event(new \App\Events\PvpRpsEvent($room, $rpsPayload));
+
+        return response()->json(['status' => 'success', 'starter' => $starterRole]);
     }
 }

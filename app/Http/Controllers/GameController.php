@@ -736,14 +736,27 @@ class GameController extends Controller
     public function getLeaderboard(Request $request): JsonResponse
     {
         $difficulty = $request->input('difficulty', 'medium');
+        if (!in_array($difficulty, ['easy', 'medium', 'hard', 'nightmare'])) {
+            $difficulty = 'medium';
+        }
 
         $topPlayers = Leaderboard::where('difficulty', $difficulty)
             ->orderByDesc('score')
             ->orderBy('duration_seconds')
             ->take(5)
-            ->get(['player_name', 'score', 'duration_seconds', 'accuracy', 'fleet_health']);
+            ->get();
 
-        return response()->json($topPlayers);
+        $formatted = $topPlayers->map(function ($p) {
+            return [
+                'player_name'      => $p->player_name ?? 'Chỉ Huy Ẩn Danh',
+                'score'            => (int) ($p->score ?? 0),
+                'duration_seconds' => (int) ($p->duration_seconds ?? 0),
+                'accuracy'         => (float) ($p->accuracy ?? 0),
+                'fleet_health'     => (float) ($p->fleet_health ?? 0),
+            ];
+        });
+
+        return response()->json($formatted);
     }
 
     public function saveScore(Request $request, Game $game): JsonResponse

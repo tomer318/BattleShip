@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -10,7 +9,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'credits', 'inventory', 'daily_purchases', 'stats'])]
+#[Fillable([
+    'name', 
+    'email', 
+    'password', 
+    'credits', 
+    'gems',
+    'inventory', 
+    'daily_purchases', 
+    'stats',
+    'elo',
+    'rank_tier',
+    'pvp_wins',
+    'pvp_losses',
+    'accuracy_rate',
+    'is_bot',
+    'bot_difficulty',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -30,6 +45,11 @@ class User extends Authenticatable
             'inventory' => 'array',
             'daily_purchases' => 'array',
             'stats' => 'array',
+            'is_bot' => 'boolean',
+            'elo' => 'integer',
+            'pvp_wins' => 'integer',
+            'pvp_losses' => 'integer',
+            'accuracy_rate' => 'float',
         ];
     }
 }
