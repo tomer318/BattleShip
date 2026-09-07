@@ -1,6 +1,6 @@
-FROM php:8.3-cli
+FROM php:8.4-cli
 
-# Cài đặt các extension cần thiết cho Laravel & PostgreSQL/MySQL
+# Cài đặt các extension cần thiết cho Laravel & PostgreSQL
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 
-# Cài đặt Composer
+# Cài đặt Composer mới nhất
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
