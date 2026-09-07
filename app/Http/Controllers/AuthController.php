@@ -19,12 +19,16 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'name'      => $validated['name'],
-            'email'     => $validated['email'],
-            'password'  => Hash::make($validated['password']),
-            'credits'   => 100, // Tặng khởi nghiệp 100$
-            'inventory' => [],
-            'stats'     => [
+            'name'            => $validated['name'],
+            'email'           => $validated['email'],
+            'password'        => Hash::make($validated['password']),
+            'credits'         => 100, // Tặng khởi nghiệp 100$
+            'inventory'       => [],
+            'daily_purchases' => [
+                'date'  => now()->toDateString(),
+                'items' => [],
+            ],
+            'stats'           => [
                 'easy'      => ['high_score' => 0, 'wins' => 0],
                 'medium'    => ['high_score' => 0, 'wins' => 0],
                 'hard'      => ['high_score' => 0, 'wins' => 0],
@@ -88,12 +92,13 @@ class AuthController extends Controller
     protected function formatUserData(User $user): array
     {
         return [
-            'name'      => $user->name,
-            'email'     => $user->email,
-            'credits'   => $user->credits ?? 0,
-            'gems'      => $user->gems ?? 0,
-            'inventory' => $user->inventory ?? [],
-            'stats'     => $user->stats ?? [
+            'name'            => $user->name,
+            'email'           => $user->email,
+            'credits'         => $user->credits ?? 0,
+            'gems'            => $user->gems ?? 0,
+            'inventory'       => $user->inventory ?? [],
+            'daily_purchases' => $user->daily_purchases ?? ['date' => now()->toDateString(), 'items' => []],
+            'stats'           => $user->stats ?? [
                 'easy'      => ['high_score' => 0, 'wins' => 0],
                 'medium'    => ['high_score' => 0, 'wins' => 0],
                 'hard'      => ['high_score' => 0, 'wins' => 0],

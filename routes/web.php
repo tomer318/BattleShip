@@ -39,3 +39,4 @@ Route::post('/api/pvp/join', [PvpController::class, 'joinRoom']);
 Route::post('/api/pvp/ready', [PvpController::class, 'ready']);
 Route::post('/api/pvp/fire', [PvpController::class, 'fire']);
 Route::post('/api/pvp/use-powerup', [PvpController::class, 'useSkill']);
+Route::post('/api/pvp/surrender', [PvpController::class, 'surrender']);

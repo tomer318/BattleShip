@@ -8,15 +8,13 @@ use App\Events\PvpSkillUsed;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\AchievementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class PvpController extends Controller
 {
-    /**
-     * Tạo phòng đấu PvP mới
-     */
     public function createRoom(Request $request): JsonResponse
     {
         /** @var User|null $user */
@@ -37,13 +35,10 @@ class PvpController extends Controller
             'status'    => 'success',
             'room_code' => $room->room_code,
             'room_id'   => $room->id,
-            'message'   => 'Đã tạo phòng chờ thành công! Hãy gửi mã phòng cho đối thủ.',
+            'message'   => 'Đã tạo phòng chờ thành công!',
         ]);
     }
 
-    /**
-     * Tham gia vào phòng đấu bằng mã phòng
-     */
     public function joinRoom(Request $request): JsonResponse
     {
         /** @var User|null $user */
@@ -75,7 +70,6 @@ class PvpController extends Controller
         $room->status = 'setup'; 
         $room->save();
 
-        // --- CỰC KỲ QUAN TRỌNG: PHÁT SỰ KIỆN QUA WEBSOCKET ---
         broadcast(new \App\Events\PlayerJoinedRoom($room))->toOthers();
 
         return response()->json([
@@ -117,10 +111,9 @@ class PvpController extends Controller
             $room->p2_ready = true;
         }
 
-        // Nếu cả 2 đều đã sẵn sàng -> Bắt đầu trận chiến!
         if ($room->p1_ready && $room->p2_ready) {
             $room->status = 'playing';
-            $room->current_turn = 'player1'; // Player 1 đánh trước
+            $room->current_turn = 'player1';
             $room->save();
 
             event(new PvpGameStarted($room));
@@ -151,12 +144,11 @@ class PvpController extends Controller
         }
 
         $roomCode = $request->input('room_code');
-        $x = (int) $request->input('x');
-        $y = (int) $request->input('y');
+        $isTimeout = (bool) $request->input('timeout', false);
 
         $room = Room::where('room_code', $roomCode)->first();
-        if (!$room || $room->status !== 'playing') {
-            return response()->json(['error' => 'Trận đấu không tồn tại hoặc chưa bắt đầu!'], 400);
+        if (!$room || !in_array($room->status, ['playing', 'setup'])) {
+            return response()->json(['error' => 'Trận đấu không tồn tại hoặc đã kết thúc!'], 400);
         }
 
         $isP1 = ($room->player1_id === $user->id);
@@ -167,9 +159,36 @@ class PvpController extends Controller
         }
 
         $myRole = $isP1 ? 'player1' : 'player2';
+        $enemyRole = $isP1 ? 'player2' : 'player1';
+
         if ($room->current_turn !== $myRole) {
             return response()->json(['error' => 'Chưa đến lượt của bạn!'], 400);
         }
+
+        // HẾT GIỜ TỰ ĐỘNG CHUYỂN LƯỢT
+        if ($isTimeout) {
+            $room->current_turn = $enemyRole;
+            $room->save();
+
+            $shotPayload = [
+                'shooter_role' => $myRole,
+                'is_timeout'   => true,
+                'next_turn'    => $enemyRole,
+                'status'       => 'playing',
+                'msg'          => "Chỉ huy [{$user->name}] đã quá thời gian tác chiến (15s)! BỊ MẤT LƯỢT!",
+            ];
+
+            event(new PvpShotFired($room, $shotPayload));
+
+            return response()->json([
+                'status' => 'timeout',
+                'shot'   => $shotPayload,
+                'room'   => $room,
+            ]);
+        }
+
+        $x = (int) $request->input('x');
+        $y = (int) $request->input('y');
 
         $myShots = ($isP1 ? $room->p1_shots : $room->p2_shots) ?? [];
         foreach ($myShots as $shot) {
@@ -178,8 +197,9 @@ class PvpController extends Controller
             }
         }
 
-        // Tàu của đối thủ
         $enemyShips = ($isP1 ? $room->p2_ships : $room->p1_ships) ?? [];
+        $enemyActive = ($isP1 ? $room->p2_active_skills : $room->p1_active_skills) ?? [];
+
         $result = 'miss';
         $hitShipName = null;
 
@@ -197,6 +217,33 @@ class PvpController extends Controller
             }
         }
 
+        // Khiên Năng Lượng
+        if (($enemyActive['shield_charges'] ?? 0) > 0 && in_array($result, ['hit', 'sunk'])) {
+            $enemyActive['shield_charges']--;
+            $result = 'shield_blocked';
+            if ($hitShipName) {
+                foreach ($enemyShips as &$s) {
+                    if ($s['name'] === $hitShipName && ($s['hits'] ?? 0) > 0) {
+                        $s['hits']--;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Màn Khói
+        $displayedResult = $result;
+        if (($enemyActive['smoke_turns'] ?? 0) > 0) {
+            $enemyActive['smoke_turns']--;
+            $displayedResult = 'smoke_hidden';
+        }
+
+        if ($isP1) {
+            $room->p2_active_skills = $enemyActive;
+        } else {
+            $room->p1_active_skills = $enemyActive;
+        }
+
         $myShots[] = ['x' => $x, 'y' => $y, 'result' => $result, 'ship' => $hitShipName];
 
         if ($isP1) {
@@ -207,7 +254,7 @@ class PvpController extends Controller
             $room->p1_ships = $enemyShips;
         }
 
-        // Kiểm tra đối thủ đã chìm hết tàu chưa
+        // Kiểm tra toàn bộ hạm đội đối thủ
         $enemyDestroyed = true;
         foreach ($enemyShips as $s) {
             if (($s['hits'] ?? 0) < $s['size']) {
@@ -218,33 +265,51 @@ class PvpController extends Controller
 
         if ($enemyDestroyed) {
             $room->status = 'finished';
-            $room->winner = $myRole;
-        } else {
-            // Đổi lượt nếu bắn trượt, bắn trúng được bắn tiếp
-            if ($result === 'miss') {
-                $room->current_turn = $isP1 ? 'player2' : 'player1';
+            $room->winner = (string) $myRole;
+
+            // MỞ KHÓA THÀNH TỰU KHI THẮNG TRẬN PVP
+            AchievementController::unlock($user, 'pvp_first_win');
+
+            $myRemainingShips = 0;
+            $myCurrentShips = ($isP1 ? $room->p1_ships : $room->p2_ships) ?? [];
+            foreach ($myCurrentShips as $ms) {
+                if (($ms['hits'] ?? 0) < $ms['size']) $myRemainingShips++;
             }
+            if ($myRemainingShips === 1) {
+                AchievementController::unlock($user, 'pvp_comeback');
+            }
+        } else {
+            if ($result === 'miss' || $result === 'shield_blocked') {
+                $room->current_turn = $enemyRole;
+            }
+        }
+
+        AchievementController::unlock($user, 'pvp_first_match');
+        if (count($myShots) === 1 && in_array($result, ['hit', 'sunk'])) {
+            AchievementController::unlock($user, 'pvp_first_blood');
         }
 
         $room->save();
 
         $shotPayload = [
-            'shooter_role' => $myRole,
-            'x'            => $x,
-            'y'            => $y,
-            'result'       => $result,
-            'ship'         => $hitShipName,
-            'next_turn'    => $room->current_turn,
-            'status'       => $room->status,
-            'winner'       => $room->winner,
+            'shooter_role'   => $myRole,
+            'is_timeout'     => false,
+            'x'              => $x,
+            'y'              => $y,
+            'result'         => $result,
+            'display_result' => $displayedResult,
+            'ship'           => $hitShipName,
+            'next_turn'      => $room->current_turn,
+            'status'         => $room->status,
+            'winner'         => $room->winner,
         ];
 
         event(new PvpShotFired($room, $shotPayload));
 
         return response()->json([
-            'status'   => 'success',
-            'shot'     => $shotPayload,
-            'room'     => $room,
+            'status' => 'success',
+            'shot'   => $shotPayload,
+            'room'   => $room,
         ]);
     }
 
@@ -274,6 +339,8 @@ class PvpController extends Controller
         }
 
         $myRole = $isP1 ? 'player1' : 'player2';
+        $enemyRole = $isP1 ? 'player2' : 'player1';
+
         if ($room->current_turn !== $myRole) {
             return response()->json(['error' => 'Chưa đến lượt của bạn!'], 400);
         }
@@ -283,7 +350,6 @@ class PvpController extends Controller
             return response()->json(['error' => 'Bạn không còn vật phẩm này trong kho!'], 400);
         }
 
-        // Trừ 1 vật phẩm
         $inv[$itemId]--;
         $user->inventory = $inv;
         $user->save();
@@ -291,16 +357,21 @@ class PvpController extends Controller
         $enemyShips = ($isP1 ? $room->p2_ships : $room->p1_ships) ?? [];
         $myShips = ($isP1 ? $room->p1_ships : $room->p2_ships) ?? [];
         $myShots = ($isP1 ? $room->p1_shots : $room->p2_shots) ?? [];
+        $enemyShots = ($isP1 ? $room->p2_shots : $room->p1_shots) ?? [];
 
         $effectData = [
-            'item'         => $itemId,
-            'user_role'    => $myRole,
-            'user_name'    => $user->name,
+            'item'        => $itemId,
+            'user_role'   => $myRole,
+            'user_name'   => $user->name,
+            'my_msg'      => '',
+            'enemy_msg'   => '',
         ];
+
+        $updatedPlayerShips = null;
+        $resetDamageCoords = [];
 
         switch ($itemId) {
             case 'recon_sat':
-                // Tìm 1 ô tàu địch chưa bắn
                 $fired = [];
                 foreach ($myShots as $s) $fired["{$s['x']},{$s['y']}"] = true;
 
@@ -315,18 +386,24 @@ class PvpController extends Controller
                         }
                     }
                 }
+
+                AchievementController::unlock($user, 'pvp_recon_master');
+
                 $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
                 $coordName = $found ? "{$letters[$found['y']]}" . ($found['x'] + 1) : "Không rõ";
 
                 $effectData['type'] = 'recon_sat';
                 $effectData['target'] = $found;
-                $effectData['msg'] = $found 
-                    ? "Vệ Tinh phát hiện tàu [{$found['ship']}] của đối thủ tại ô [{$coordName}]!" 
-                    : "Không còn tọa độ tàu nào khả dụng để quét!";
+                $effectData['my_msg'] = $found 
+                    ? "Vệ Tinh phát hiện tàu [{$found['ship']}] của đối phương tại ô [{$coordName}]!" 
+                    : "Không còn mục tiêu để trinh sát!";
+
+                $effectData['enemy_msg'] = $found 
+                    ? "⚠️ BÁO ĐỘNG ĐỎ: Tàu [{$found['ship']}] của bạn đã bị Vệ Tinh đối phương phát hiện và khóa mục tiêu! Hãy dùng Cơ Động/Tái Cấu Trúc để thoát hiểm!" 
+                    : "Vệ tinh đối phương vừa quét qua vùng trời của bạn!";
                 break;
 
             case 'recon_scan':
-                // Radar vùng 3x3 quanh tâm targetX, targetY
                 $count = 0;
                 $enemyCoords = [];
                 foreach ($enemyShips as $s) {
@@ -340,18 +417,20 @@ class PvpController extends Controller
                         }
                     }
                 }
+
+                AchievementController::unlock($user, 'pvp_recon_master'); // "Vua Trinh Sát PvP"
+
                 $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
                 $coordName = "{$letters[$targetY]}" . ($targetX + 1);
 
                 $effectData['type'] = 'recon_scan';
                 $effectData['cx'] = $targetX;
                 $effectData['cy'] = $targetY;
-                $effectData['count'] = $count;
-                $effectData['msg'] = "Radar quét 3x3 quanh tâm [{$coordName}] phát hiện {$count} ô có tàu đối phương!";
+                $effectData['my_msg'] = "Radar quét vùng 3x3 quanh [{$coordName}] phát hiện {$count} ô có tàu!";
+                $effectData['enemy_msg'] = "Đối phương vừa quét Radar 3x3 quanh khu vực hải đồ của bạn!";
                 break;
 
             case 'recon_sonar':
-                // Sonar cảm biến cự ly 5x5
                 $minDistance = 999;
                 foreach ($enemyShips as $s) {
                     if (($s['hits'] ?? 0) < $s['size']) {
@@ -361,6 +440,9 @@ class PvpController extends Controller
                         }
                     }
                 }
+
+                AchievementController::unlock($user, 'pvp_recon_master'); // "Vua Trinh Sát PvP"
+
                 $desc = 'RẤT XA (> 5 ô)';
                 if ($minDistance <= 1) $desc = 'RẤT GẦN (Sát cạnh!)';
                 elseif ($minDistance <= 2) $desc = 'GẦN (~2 ô)';
@@ -372,14 +454,15 @@ class PvpController extends Controller
                 $effectData['type'] = 'recon_sonar';
                 $effectData['cx'] = $targetX;
                 $effectData['cy'] = $targetY;
-                $effectData['msg'] = "Sonar xung quanh [{$coordName}]: Tàu địch gần nhất đang ở cự ly [{$desc}]!";
+                $effectData['my_msg'] = "Sonar xung quanh [{$coordName}]: Tàu địch gần nhất ở cự ly [{$desc}]!";
+                $effectData['enemy_msg'] = "Sóng âm Sonar 5x5 của đối phương vừa quét qua vùng biển của bạn!";
                 break;
 
             case 'combat_guided':
-                // Tên lửa dẫn đường: Tự động bắn trúng 1 ô tàu địch còn nguyên
                 $fired = [];
                 foreach ($myShots as $s) $fired["{$s['x']},{$s['y']}"] = true;
                 $target = null;
+
                 foreach ($enemyShips as $ship) {
                     if (($ship['hits'] ?? 0) < $ship['size']) {
                         foreach ($ship['coordinates'] as $c) {
@@ -392,18 +475,47 @@ class PvpController extends Controller
                 }
 
                 if ($target) {
-                    $fakeReq = new Request([
+                    $effectData['type'] = 'combat_guided';
+                    $effectData['my_msg'] = "Đã khai hỏa [TÊN LỬA DẪN ĐƯỜNG] đánh trúng mục tiêu tại tọa độ [".chr(65 + $target['y']).($target['x'] + 1)."]!";
+                    $effectData['enemy_msg'] = "CẢNH BÁO: Đối phương đã khai hỏa [TÊN LỬA DẪN ĐƯỜNG] đánh trúng hạm đội của bạn!";
+                    event(new PvpSkillUsed($room, $effectData));
+
+                    // Tự động kích hoạt phát bắn
+                    $request->merge([
                         'room_code' => $roomCode,
                         'x'         => $target['x'],
                         'y'         => $target['y'],
+                        'timeout'   => false
                     ]);
-                    return $this->fire($fakeReq);
+                    return $this->fire($request);
                 }
-                $effectData['msg'] = 'Không còn mục tiêu để phóng tên lửa!';
+
+                $effectData['my_msg'] = 'Không tìm thấy mục tiêu khả dụng để phóng tên lửa!';
+                $effectData['enemy_msg'] = '';
+                break;
+
+            case 'combat_smokescreen':
+                $myActive = ($isP1 ? $room->p1_active_skills : $room->p2_active_skills) ?? [];
+                $myActive['smoke_turns'] = 5;
+                if ($isP1) $room->p1_active_skills = $myActive;
+                else $room->p2_active_skills = $myActive;
+                $room->save();
+
+                $effectData['type'] = 'combat_smokescreen';
+                $effectData['my_msg'] = "Đã thả [MÀN KHÓI NHIỄU LOẠN]! 5 phát bắn tiếp theo của địch vào hạm đội bạn sẽ bị giấu kết quả!";
+                $effectData['enemy_msg'] = "Đối phương đã kích hoạt [MÀN KHÓI NHIỄU LOẠN]! Bạn sẽ không thể thấy kết quả trúng/trượt trong 5 phát bắn tiếp theo!";
+                break;
+
+            case 'combat_airstrike':
+                $room->current_turn = $myRole;
+                $room->save();
+
+                $effectData['type'] = 'combat_airstrike';
+                $effectData['my_msg'] = "Không Kích thành công! Đối phương bị tước quyền bắn, bạn được bắn tiếp 1 lượt!";
+                $effectData['enemy_msg'] = "CẢNH BÁO: Bạn bị Không Kích Phá Rối và MẤT 1 LƯỢT KHAI HỎA!";
                 break;
 
             case 'def_shield':
-                // Kích hoạt khiên chắn
                 $myActive = ($isP1 ? $room->p1_active_skills : $room->p2_active_skills) ?? [];
                 $myActive['shield_charges'] = 3;
                 if ($isP1) $room->p1_active_skills = $myActive;
@@ -411,21 +523,189 @@ class PvpController extends Controller
                 $room->save();
 
                 $effectData['type'] = 'def_shield';
-                $effectData['msg'] = "Đã kích hoạt Khiên Năng Lượng: Bảo vệ hạm đội khỏi 3 phát bắn tiếp theo!";
+                $effectData['my_msg'] = "Đã bật [KHIÊN NĂNG LƯỢNG]: Miễn nhiễm 3 phát đạn trúng tiếp theo!";
+                $effectData['enemy_msg'] = "CẢNH BÁO: Đối phương đã bật [KHIÊN NĂNG LƯỢNG]!";
+                break;
+
+            case 'def_tactical_relocate':
+            case 'def_repair_relocate':
+                // Tìm tàu cần di dời
+                $shipIndex = -1;
+                if ($targetShipName) {
+                    foreach ($myShips as $i => $s) {
+                        if ($s['name'] === $targetShipName) {
+                            $shipIndex = $i;
+                            break;
+                        }
+                    }
+                }
+                
+                // Nếu chưa chọn, tự tìm chiếc tàu bị thương (nếu là Tái cấu trúc) hoặc tàu bất kỳ
+                if ($shipIndex === -1) {
+                    foreach ($myShips as $i => $s) {
+                        if ($itemId === 'def_repair_relocate' && ($s['hits'] ?? 0) > 0) {
+                            $shipIndex = $i;
+                            break;
+                        }
+                    }
+                    if ($shipIndex === -1 && !empty($myShips)) $shipIndex = 0;
+                }
+
+                $targetShip = &$myShips[$shipIndex];
+                $shipSize = $targetShip['size'];
+
+                // Lưu lại các toạ độ trúng đạn cũ của tàu này để biến thành ô xám
+                if ($itemId === 'def_repair_relocate') {
+                    $targetShip['hits'] = 0;
+                    foreach ($targetShip['coordinates'] as $c) {
+                        foreach ($enemyShots as $es) {
+                            if ($es['x'] === $c['x'] && $es['y'] === $c['y'] && in_array($es['result'], ['hit', 'sunk'])) {
+                                $resetDamageCoords[] = ['x' => $c['x'], 'y' => $c['y']];
+                            }
+                        }
+                    }
+
+                    // Đổi kết quả trong enemyShots thành miss để không còn tính là trúng
+                    foreach ($enemyShots as &$es) {
+                        foreach ($resetDamageCoords as $rc) {
+                            if ($es['x'] === $rc['x'] && $es['y'] === $rc['y']) {
+                                $es['result'] = 'miss';
+                                $es['ship'] = null;
+                            }
+                        }
+                    }
+                    if ($isP1) $room->p2_shots = $enemyShots;
+                    else $room->p1_shots = $enemyShots;
+                }
+
+                // Thuật toán di dời tàu sang toạ độ an toàn mới
+                $firedEnemyCoords = [];
+                foreach ($enemyShots as $es) $firedEnemyCoords["{$es['x']},{$es['y']}"] = true;
+
+                $occupiedCoords = [];
+                foreach ($myShips as $idx => $s) {
+                    if ($idx === $shipIndex) continue;
+                    foreach ($s['coordinates'] as $c) $occupiedCoords["{$c['x']},{$c['y']}"] = true;
+                }
+
+                $newCoords = null;
+                for ($attempt = 0; $attempt < 300; $attempt++) {
+                    $isHorizontal = (rand(0, 1) === 1);
+                    $startX = rand(0, $isHorizontal ? (10 - $shipSize) : 9);
+                    $startY = rand(0, $isHorizontal ? 9 : (10 - $shipSize));
+
+                    $valid = true;
+                    $tempCoords = [];
+                    for ($step = 0; $step < $shipSize; $step++) {
+                        $cx = $isHorizontal ? ($startX + $step) : $startX;
+                        $cy = $isHorizontal ? $startY : ($startY + $step);
+                        if (isset($occupiedCoords["$cx,$cy"]) || isset($firedEnemyCoords["$cx,$cy"])) {
+                            $valid = false;
+                            break;
+                        }
+                        $tempCoords[] = ['x' => $cx, 'y' => $cy];
+                    }
+
+                    if ($valid) {
+                        $newCoords = $tempCoords;
+                        AchievementController::unlock($user, 'pvp_relocate_master');
+                        break;
+                    }
+                }
+
+                if ($newCoords) {
+                    $targetShip['coordinates'] = $newCoords;
+                    if ($isP1) $room->p1_ships = $myShips;
+                    else $room->p2_ships = $myShips;
+                    $room->save();
+
+                    $updatedPlayerShips = $myShips;
+                    $effectData['type'] = 'def_relocate';
+                    $effectData['reset_damage_coords'] = $resetDamageCoords;
+                    
+                    // Người dùng thấy tàu nào được di chuyển
+                    $effectData['my_msg'] = ($itemId === 'def_repair_relocate')
+                        ? "Đã kích hoạt [TÁI CẤU TRÚC]: Tàu {$targetShip['name']} hồi phục 100% và bí mật đổi sang vị trí an toàn mới!"
+                        : "Đã kích hoạt [CƠ ĐỘNG CHIẾN THUẬT]: Tàu {$targetShip['name']} đã bí mật cơ động đổi hướng!";
+
+                    // Đối thủ chỉ biết có tàu di dời nhưng TUYỆT ĐỐI KHÔNG BIẾT LÀ TÀU NÀO
+                    $effectData['enemy_msg'] = ($itemId === 'def_repair_relocate')
+                        ? "Đối phương đã kích hoạt [TÁI CẤU TRÚC]! Một chiếc tàu bị thương của địch đã phục hồi và bí mật đổi vị trí!"
+                        : "Đối phương đã kích hoạt [CƠ ĐỘNG CHIẾN THUẬT] bí mật chuyển hướng hải hành!";
+                } else {
+                    $effectData['type'] = 'def_relocate_fail';
+                    $effectData['my_msg'] = "Không còn vùng biển an toàn đủ rộng để điều động tàu!";
+                    $effectData['enemy_msg'] = "";
+                }
                 break;
 
             default:
-                $effectData['msg'] = "Đã kích hoạt trang bị chiến thuật!";
+                $effectData['my_msg'] = "Đã kích hoạt trang bị chiến thuật!";
+                $effectData['enemy_msg'] = "Đối phương vừa kích hoạt một trang bị chiến thuật!";
                 break;
         }
 
-        // Phát tín hiệu qua Reverb cho cả 2 máy cùng thấy hiệu ứng
         event(new PvpSkillUsed($room, $effectData));
 
         return response()->json([
-            'status'    => 'success',
-            'inventory' => $user->inventory,
-            'effect'    => $effectData,
+            'status'               => 'success',
+            'inventory'            => $user->inventory,
+            'effect'               => $effectData,
+            'player_ships'         => $updatedPlayerShips,
+            'reset_damage_coords'  => $resetDamageCoords,
+        ]);
+    }
+
+    /**
+     * Đầu hàng hoặc thoát trận đấu PvP
+     */
+    public function surrender(Request $request): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Chưa đăng nhập!'], 401);
+        }
+
+        $roomCode = $request->input('room_code');
+        $reason = $request->input('reason', 'surrender'); // 'surrender' hoặc 'disconnect'
+
+        $room = Room::where('room_code', $roomCode)->first();
+        if (!$room || $room->status !== 'playing') {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        $isP1 = ($room->player1_id === $user->id);
+        $isP2 = ($room->player2_id === $user->id);
+        if (!$isP1 && !$isP2) {
+            return response()->json(['error' => 'Không thuộc phòng!'], 403);
+        }
+
+        $loserRole = $isP1 ? 'player1' : 'player2';
+        $winnerRole = $isP1 ? 'player2' : 'player1';
+
+        $room->status = 'finished';
+        $room->winner = $winnerRole;
+        $room->save();
+
+        $actionMsg = ($reason === 'disconnect')
+            ? "Chỉ huy [{$user->name}] đã mất kết nối / rời trận đấu! Xử thua!"
+            : "Chỉ huy [{$user->name}] đã chủ động kéo cờ trắng ĐẦU HÀNG!";
+
+        $shotPayload = [
+            'shooter_role'   => $loserRole,
+            'is_surrender'   => true,
+            'reason'         => $reason,
+            'status'         => 'finished',
+            'winner'         => $winnerRole,
+            'msg'            => $actionMsg,
+        ];
+
+        event(new PvpShotFired($room, $shotPayload));
+
+        return response()->json([
+            'status' => 'success',
+            'room'   => $room,
         ]);
     }
 }

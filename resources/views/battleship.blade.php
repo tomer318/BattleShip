@@ -105,74 +105,77 @@
 </head>
 <body class="text-slate-100 min-h-screen p-6 antialiased selection:bg-cyan-500 selection:text-black">
     <div class="max-w-7xl mx-auto" id="gameAppContainer">
-        <!-- Header HUD -->
-        <header class="flex flex-wrap justify-between items-center mb-6 pb-4 border-b border-cyan-900/40">
+        <!-- Header HUD Gọn Gàng & Hiện Đại -->
+        <header class="flex flex-wrap justify-between items-center mb-5 pb-3.5 border-b border-cyan-900/40 gap-3">
             <div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5">
                     <span class="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
-                    <h1 class="text-3xl font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 via-teal-300 to-sky-500 bg-clip-text text-transparent uppercase">
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 via-teal-300 to-sky-500 bg-clip-text text-transparent uppercase">
                         Battleship Tactical War
                     </h1>
                 </div>
-                <p id="gameStatusText" class="text-slate-400 mt-1 text-sm tracking-wide">
+                <p id="gameStatusText" class="text-slate-400 mt-0.5 text-xs sm:text-sm tracking-wide">
                     HỆ THỐNG DÀN TRẬN: Hãy đặt đủ 5 tàu chiến lên bàn cờ để kích hoạt radar.
                 </p>
             </div>
             
-            <div class="flex items-center gap-2.5 mt-3 sm:mt-0 font-sans">
+            <div class="flex items-center gap-2 flex-wrap font-sans text-xs">
                 <!-- Hộp Profile HUD -->
-                <div id="authUserBlock" class="h-[42px] hidden flex items-center gap-3 bg-slate-900/90 hover:bg-slate-850 border border-cyan-500/40 hover:border-cyan-400 rounded-lg px-3 transition shadow-[0_0_15px_rgba(6,182,212,0.12)]">
-                    <div class="flex items-center gap-2.5 cursor-pointer" onclick="openModal('profileModal')">
+                <div id="authUserBlock" class="h-9 hidden flex items-center gap-2.5 bg-slate-900/90 border border-cyan-500/40 rounded-lg px-2.5 transition shadow-[0_0_15px_rgba(6,182,212,0.12)]">
+                    <div class="flex items-center gap-2 cursor-pointer" onclick="openModal('profileModal')">
                         <span class="text-amber-400 text-sm">🎖️</span>
                         <div class="text-left leading-tight">
-                            <span id="navCommanderName" class="block text-[11px] font-bold text-cyan-300 tracking-wider truncate max-w-[90px]">Commander</span>
-                            <div class="flex items-center gap-2 font-mono-tactical text-[11px]">
+                            <span id="navCommanderName" class="block text-[10px] font-bold text-cyan-300 truncate max-w-[80px]">Commander</span>
+                            <div class="flex items-center gap-1.5 font-mono-tactical text-[10px]">
                                 <span id="navCredits" class="text-amber-400 font-bold">$0</span>
                                 <span id="navGems" class="text-fuchsia-400 font-bold">💎0</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="logout()" title="Đăng xuất" class="text-slate-500 hover:text-rose-400 text-xs ml-1 transition">✕</button>
+                    <button onclick="logout()" title="Đăng xuất" class="text-slate-500 hover:text-rose-400 text-xs ml-1">✕</button>
                 </div>
 
-                <div id="authGuestBlock" class="h-[42px] flex items-center gap-2">
-                    <button onclick="openModal('loginModal')" class="h-full border border-cyan-500/40 hover:border-cyan-400 hover:bg-cyan-500/10 text-cyan-300 text-xs uppercase px-3.5 rounded-lg font-bold transition shadow-[0_0_12px_rgba(6,182,212,0.1)]">
+                <div id="authGuestBlock" class="h-9 flex items-center gap-1.5">
+                    <button onclick="openModal('loginModal')" class="h-full border border-cyan-500/40 hover:bg-cyan-500/10 text-cyan-300 text-[11px] uppercase px-3 rounded-lg font-bold transition">
                         Đăng Nhập
                     </button>
-                    <button onclick="openModal('registerModal')" class="h-full bg-cyan-600/80 hover:bg-cyan-500 text-white text-xs uppercase px-3.5 rounded-lg font-bold transition shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+                    <button onclick="openModal('registerModal')" class="h-full bg-cyan-600/80 hover:bg-cyan-500 text-white text-[11px] uppercase px-3 rounded-lg font-bold transition">
                         Đăng Ký
                     </button>
                 </div>
 
-                <button onclick="openShopModal()" class="h-[42px] px-3.5 rounded-lg border border-amber-500/40 bg-slate-900/90 hover:bg-amber-500/10 hover:border-amber-400 text-amber-300 font-bold text-xs uppercase tracking-wider transition shadow-[0_0_15px_rgba(245,158,11,0.12)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center gap-2">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                    <span class="tracking-wider">QUÂN NHU</span>
-                    <span class="text-[10px] text-amber-400/80 border border-amber-500/30 px-1 rounded font-mono-tactical">SHOP</span>
+                <button onclick="openShopModal()" class="h-9 px-3 rounded-lg border border-amber-500/40 bg-slate-900/90 hover:bg-amber-500/10 text-amber-300 font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+                    <span>📦</span>
+                    <span>QUÂN NHU</span>
                 </button>
 
-                <!-- Nút Bật/Tắt SFX -->
-                <button id="sfxToggleBtn" onclick="toggleSFX()" class="h-[42px] px-3 rounded-lg border border-cyan-500/40 bg-slate-900/90 hover:bg-cyan-500/10 hover:border-cyan-400 text-cyan-300 font-bold text-xs uppercase tracking-wider transition shadow-[0_0_15px_rgba(6,182,212,0.12)] flex items-center gap-1.5" title="Bật/Tắt Âm Thanh">
+                <button id="sfxToggleBtn" onclick="toggleSFX()" class="h-9 px-2.5 rounded-lg border border-cyan-500/40 bg-slate-900/90 hover:bg-cyan-500/10 text-cyan-300 font-bold uppercase tracking-wider transition flex items-center gap-1" title="Bật/Tắt Âm Thanh">
                     <span id="sfxIcon">🔊</span>
-                    <span id="sfxText" class="font-mono-tactical hidden sm:inline text-[11px]">SFX: BẬT</span>
+                    <span id="sfxText" class="font-mono-tactical text-[10px]">BẬT</span>
                 </button>
 
-                <!-- Nút Mở Phòng PvP Online -->
-                <button onclick="openPvpModal()" class="h-[42px] px-3.5 rounded-lg border border-indigo-500/40 bg-slate-900/90 hover:bg-indigo-500/10 hover:border-indigo-400 text-indigo-300 font-bold text-xs uppercase tracking-wider transition shadow-[0_0_15px_rgba(99,102,241,0.12)] flex items-center gap-2">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
-                    <span>⚔️ ĐẤU MẠNG PVP</span>
+                <button onclick="openPvpModal()" class="h-9 px-3 rounded-lg border border-indigo-500/40 bg-slate-900/90 hover:bg-indigo-500/10 text-indigo-300 font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+                    <span>ĐẤU MẠNG</span>
                 </button>
 
-                <div class="relative h-[42px]">
-                    <select id="difficultySelect" class="select-tactical h-full font-semibold bg-slate-900/90 text-cyan-300 border border-cyan-500/40 hover:border-cyan-400 rounded-lg pl-3.5 pr-8 text-xs tracking-wider shadow-[0_0_15px_rgba(6,182,212,0.12)] focus:outline-none focus:ring-1 focus:ring-cyan-400 cursor-pointer transition">
-                        <option value="random" class="bg-slate-900 text-amber-300">🎲 Ngẫu nhiên (Bí ẩn)</option>
-                        <option value="easy" class="bg-slate-900 text-slate-200">Dễ (Ngẫu nhiên)</option>
-                        <option value="medium" class="bg-slate-900 text-slate-200" selected>Trung bình (Hunt / Target)</option>
-                        <option value="hard" class="bg-slate-900 text-slate-200">Khó (Parity Checkerboard)</option>
-                        <option value="nightmare" class="bg-slate-900 text-rose-400">Cực khó (Bản đồ xác suất)</option>
+                <!-- Nút Đầu Hàng (Chỉ hiện khi trận đấu đang diễn ra) -->
+                <button id="btnSurrenderWar" onclick="confirmSurrender()" class="hidden h-9 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/60 text-rose-300 px-3 rounded-lg font-bold uppercase tracking-wider transition shadow-[0_0_12px_rgba(244,63,94,0.3)] flex items-center gap-1.5">
+                    <span>🏳️</span>
+                    <span>ĐẦU HÀNG</span>
+                </button>
+
+                <div class="relative h-9">
+                    <select id="difficultySelect" class="select-tactical h-full font-semibold bg-slate-900/90 text-cyan-300 border border-cyan-500/40 rounded-lg pl-2.5 pr-7 text-[11px] tracking-wider focus:outline-none cursor-pointer">
+                        <option value="random" class="bg-slate-900 text-amber-300">🎲 Ngẫu nhiên</option>
+                        <option value="easy" class="bg-slate-900 text-slate-200">Dễ</option>
+                        <option value="medium" class="bg-slate-900 text-slate-200" selected>Trung bình</option>
+                        <option value="hard" class="bg-slate-900 text-slate-200">Khó</option>
+                        <option value="nightmare" class="bg-slate-900 text-rose-400">Cực khó</option>
                     </select>
                 </div>
 
-                <button onclick="resetSetup()" class="h-[42px] bg-slate-900/90 hover:bg-slate-800 hover:text-cyan-300 text-slate-300 border border-slate-700/80 hover:border-slate-500 px-4 rounded-lg text-xs font-bold tracking-wider uppercase transition shadow-[0_0_12px_rgba(0,0,0,0.4)] flex items-center justify-center">
+                <button onclick="resetSetup()" class="h-9 bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700/80 px-3 rounded-lg font-bold tracking-wider uppercase transition">
                     XẾP LẠI
                 </button>
             </div>
@@ -615,11 +618,11 @@
         function toggleSFX() {
             sfxEnabled = !sfxEnabled;
             document.getElementById('sfxIcon').innerText = sfxEnabled ? '🔊' : '🔇';
-            document.getElementById('sfxText').innerText = sfxEnabled ? 'SFX: BẬT' : 'SFX: TẮT';
+            document.getElementById('sfxText').innerText = sfxEnabled ? 'BẬT' : 'TẮT';
             const btn = document.getElementById('sfxToggleBtn');
             btn.className = sfxEnabled 
-                ? 'h-[42px] px-3 rounded-lg border border-cyan-500/40 bg-slate-900/90 hover:bg-cyan-500/10 hover:border-cyan-400 text-cyan-300 font-bold text-xs uppercase tracking-wider transition shadow-[0_0_15px_rgba(6,182,212,0.12)] flex items-center gap-1.5'
-                : 'h-[42px] px-3 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-500 font-bold text-xs uppercase tracking-wider transition flex items-center gap-1.5';
+                ? 'h-9 px-2.5 rounded-lg border border-cyan-500/40 bg-slate-900/90 hover:bg-cyan-500/10 text-cyan-300 font-bold uppercase tracking-wider transition flex items-center gap-1'
+                : 'h-9 px-2.5 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-500 font-bold uppercase tracking-wider transition flex items-center gap-1';
             
             if (sfxEnabled) playSFX('click');
         }
@@ -859,9 +862,29 @@
         }
 
         async function handleTurnTimeout(isPlayerTurn) {
-            if (phase !== 'playing' || !currentGameId) return;
+            if (phase !== 'playing') return;
 
-            if (isPlayerTurn) {
+            // XỬ LÝ HẾT GIỜ CHO PVP ONLINE
+            if (gameMode === 'pvp' && isPlayerTurn) {
+                log(`HẾT GIỜ TÁC CHIẾN (15s)! Bạn đã bị MẤT LƯỢT KHAI HỎA!`, 'text-rose-500 font-bold');
+                triggerSkillAlert("QUÁ GIỜ KHAI HỎA: ĐỐI THỦ CHIẾM QUYỀN BẮN!", true);
+                playSFX('alarm');
+
+                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                try {
+                    await fetch('/api/pvp/fire', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ room_code: roomCode, timeout: true })
+                    });
+                } catch (err) {
+                    console.error("Lỗi gửi timeout PvP:", err);
+                }
+                return;
+            }
+
+            // XỬ LÝ HẾT GIỜ CHO PVE (ĐÁNH VỚI BOT)
+            if (isPlayerTurn && currentGameId) {
                 log(`HẾT GIỜ TÁC CHIẾN (15s)! Hệ thống hỏa lực bị quá tải, BẠN BỊ MẤT LƯỢT!`, 'text-rose-500 font-bold');
                 triggerSkillAlert("QUÁ GIỜ KHAI HỎA: ĐỐI PHƯƠNG CHIẾM QUYỀN PHẢN KÍCH!", true);
                 playSFX('alarm');
@@ -1130,6 +1153,14 @@
             if (unrevealed) {
                 unrevealed.innerText = label;
                 unrevealed.className = 'w-full py-2 px-1 text-[10px] font-bold text-center rounded border border-rose-500 bg-rose-950/80 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.6)] animate-pulse';
+            } else {
+                // Nếu đối thủ dùng nhiều hơn số ô mặc định -> tự động thêm ô hiển thị
+                const container = document.getElementById('botSkillsList');
+                const slot = document.createElement('div');
+                slot.className = 'w-full py-2 px-1 text-[10px] font-bold text-center rounded border border-rose-500 bg-rose-950/80 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.6)] animate-pulse';
+                slot.innerText = label;
+                container.appendChild(slot);
+                botItemSlots.push(slot);
             }
         }
 
@@ -1181,8 +1212,20 @@
                             currentUser.inventory = data.inventory;
                             renderPlayerSkills();
                         }
-                        if (data.effect) {
-                            handlePvpSkillEffect(data.effect);
+                        
+                        // Nếu là tên lửa dẫn đường trả về kết quả bắn
+                        if (data.shot) {
+                            handlePvpShotResult(data.shot);
+                        }
+
+                        if (data.player_ships) {
+                            placedShips = data.player_ships;
+                            renderMyFleetGrid(placedShips);
+                        }
+
+                        // TIẾP TỤC ĐỒNG HỒ ĐẾM NGƯỢC
+                        if (phase === 'playing') {
+                            startTurnTimer(true);
                         }
                     } else {
                         alert(data.error || 'Lỗi kích hoạt kỹ năng PvP!');
@@ -1190,6 +1233,7 @@
                     }
                 } catch (err) {
                     console.error("Lỗi kỹ năng PvP:", err);
+                    startTurnTimer(true);
                 }
                 return;
             }
@@ -1347,8 +1391,18 @@
             const container = document.getElementById('shopTabContent');
             container.innerHTML = '';
 
-            const today = new Date().toISOString().split('T')[0];
-            const daily = (currentUser?.daily_purchases?.date === today) ? (currentUser.daily_purchases.items || {}) : {};
+            const localDate = new Date();
+            const year = localDate.getFullYear();
+            const month = String(localDate.getMonth() + 1).padStart(2, '0');
+            const day = String(localDate.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
+
+            let userDaily = currentUser?.daily_purchases;
+            if (typeof userDaily === 'string') {
+                try { userDaily = JSON.parse(userDaily); } catch (e) {}
+            }
+
+            const daily = (userDaily && userDaily.date === today) ? (userDaily.items || {}) : {};
 
             const categories = [
                 { key: 'recon', title: '📡 HỆ THỐNG TRINH SÁT (RECON MODULES)', border: 'border-cyan-950', text: 'text-cyan-400' },
@@ -1806,6 +1860,8 @@
             currentGameId = null;
             targetingSkill = null;
 
+            setSurrenderButtonVisibility(false);
+
             clearInterval(turnTimerInterval);
             document.getElementById('turnTimerContainer').classList.add('hidden');
 
@@ -1850,7 +1906,7 @@
                 return;
             }
 
-            // NẾU ĐANG CHƠI VỚI BOT (GIỮ NGUYÊN CODE CŨ)
+            // NẾU ĐANG CHƠI VỚI BOT
             let selectedDifficulty = document.getElementById('difficultySelect').value;
             let actualDifficulty = selectedDifficulty;
 
@@ -1876,6 +1932,8 @@
 
             playSFX('alarm');
 
+            setSurrenderButtonVisibility(true);
+
             document.getElementById('placementControls').classList.add('hidden');
             const botGrid = document.getElementById('botGrid');
             botGrid.classList.remove('opacity-40', 'pointer-events-none');
@@ -1895,6 +1953,12 @@
             console.log(`Bắn: x=${x}, y=${y}, phase=${phase}, mode=${gameMode}, roomCode=${currentPvpRoomCode}`);
             clearInterval(turnTimerInterval);
             if (phase !== 'playing') return;
+
+            // KIỂM TRA NẾU ĐANG CHỌN TÂM QUÉT KỸ NĂNG (DÙ LÀ PVP HAY PVE)
+            if (targetingSkill === 'recon_scan' || targetingSkill === 'recon_sonar') {
+                sendSkillExecution(targetingSkill, { target_x: x, target_y: y });
+                return;
+            }
 
             // XỬ LÝ KHAI HỎA TRONG TRẬN PVP ONLINE
             if (gameMode === 'pvp') {
@@ -2176,6 +2240,64 @@
         checkCurrentUser();
         loadLeaderboard();
 
+        // BẬT / TẮT NÚT ĐẦU HÀNG THEO TRẠNG THÁI TRẬN ĐẤU
+        function setSurrenderButtonVisibility(visible) {
+            const btn = document.getElementById('btnSurrenderWar');
+            if (btn) {
+                if (visible) btn.classList.remove('hidden');
+                else btn.classList.add('hidden');
+            }
+        }
+
+        // XÁC NHẬN ĐẦU HÀNG
+        async function confirmSurrender() {
+            if (phase !== 'playing') return;
+
+            if (!confirm('Chỉ huy có chắc chắn muốn KÉO CỜ TRẮNG ĐẦU HÀNG không? Hành động này sẽ tính là THẤT BẠI!')) {
+                return;
+            }
+
+            playSFX('alarm');
+
+            // NẾU ĐANG TRONG TRẬN PVP ONLINE
+            if (gameMode === 'pvp') {
+                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                try {
+                    await fetch('/api/pvp/surrender', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ room_code: roomCode, reason: 'surrender' })
+                    });
+                } catch (err) {
+                    console.error("Lỗi gửi đầu hàng PvP:", err);
+                }
+                return;
+            }
+
+            // NẾU ĐANG ĐÁNH BOT (PVE)
+            phase = 'ended';
+            clearInterval(turnTimerInterval);
+            document.getElementById('turnTimerContainer').classList.add('hidden');
+            setSurrenderButtonVisibility(false);
+
+            document.getElementById('gameStatusText').innerText = "BẠN ĐÃ CHỦ ĐỘNG ĐẦU HÀNG! TRẬN CHIẾN KẾT THÚC VỚI THẤT BẠI.";
+            log("[ĐẦU HÀNG] Bạn đã kéo cờ trắng xin hàng.", "text-rose-500 font-bold");
+        }
+
+        // TỰ ĐỘNG XỬ THUA KHI TẮT TAB / RỜI KHỎI TRÌNH DUYỆT (BEACON API)
+        window.addEventListener('beforeunload', function (e) {
+            if (phase === 'playing' && gameMode === 'pvp') {
+                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                if (roomCode) {
+                    const data = new FormData();
+                    data.append('room_code', roomCode);
+                    data.append('reason', 'disconnect');
+                    data.append('_token', csrfToken);
+                    navigator.sendBeacon('/api/pvp/surrender', data);
+                }
+            }
+        });
+
         /* ===================================================
            QUẢN LÝ PHÒNG ĐẤU PVP ONLINE & WEBSOCKET REVERB
            =================================================== */
@@ -2234,10 +2356,8 @@
             });
 
             // LẮNG NGHE KHI ĐỐI PHƯƠNG SỬ DỤNG KỸ NĂNG
+            pvpEchoChannel.unbind('pvp.skill.used');
             pvpEchoChannel.bind('pvp.skill.used', function(data) {
-                handlePvpSkillEffect(data.skillData);
-            });
-            pvpEchoChannel.bind('.pvp.skill.used', function(data) {
                 handlePvpSkillEffect(data.skillData);
             });
         }
@@ -2318,6 +2438,10 @@
             currentRoomData = room;
             playSFX('alarm');
 
+            setSurrenderButtonVisibility(true);
+
+            renderBotLoadoutSlots(4);
+
             if (room && room.room_code) currentPvpRoomCode = room.room_code;
 
             // Ẩn thanh công cụ dàn trận
@@ -2369,20 +2493,48 @@
 
         function handlePvpShotResult(shot) {
             console.log("Xử lý kết quả bắn:", shot);
+
+            // NẾU LÀ SỰ KIỆN TIMEOUT (MẤT LƯỢT)
+            if (shot.is_timeout) {
+                log(`[TIMEOUT] ${shot.msg}`, 'text-amber-400 font-bold');
+                triggerSkillAlert(shot.msg, (shot.shooter_role === myPvpRole));
+                
+                const isMyTurnNow = (shot.next_turn === myPvpRole);
+                const botGrid = document.getElementById('botGrid');
+                if (isMyTurnNow) {
+                    botGrid.classList.remove('pointer-events-none', 'opacity-60');
+                    document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
+                } else {
+                    botGrid.classList.add('pointer-events-none', 'opacity-60');
+                    document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
+                }
+                startTurnTimer(isMyTurnNow);
+                return;
+            }
+
             const isMeShooting = (shot.shooter_role === myPvpRole);
             const coordStr = toCoordName(shot.x, shot.y);
+            const resultToShow = shot.display_result || shot.result;
 
             if (isMeShooting) {
-                // Mình là người bắn -> Đánh dấu lên bàn cờ đối phương (bên phải)
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
-                    if (shot.result === 'hit' || shot.result === 'sunk') {
-                        if (shot.result === 'sunk') playSFX('sunk');
+                    if (resultToShow === 'smoke_hidden') {
+                        targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
+                        targetCell.innerText = '💨';
+                        log(`[MÀN KHÓI] Hỏa lực tại [${coordStr}] bị khói mù che khuất! Không rõ trúng hay trượt!`, 'text-purple-400 font-bold');
+                    } else if (resultToShow === 'shield_blocked') {
+                        playSFX('shield');
+                        targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
+                        targetCell.innerText = '🛡️';
+                        log(`[KHIÊN CHẶN] Khiên năng lượng của đối thủ đã chặn đứng phát đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
+                    } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
+                        if (resultToShow === 'sunk') playSFX('sunk');
                         else playSFX('hit');
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
-                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${shot.result === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
+                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${resultToShow === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
                     } else {
                         playSFX('miss');
                         targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
@@ -2391,10 +2543,14 @@
                     }
                 }
             } else {
-                // Đối phương bắn mình -> Đánh dấu lên bàn cờ của mình (bên trái)
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
-                    if (shot.result === 'hit' || shot.result === 'sunk') {
+                    if (shot.result === 'shield_blocked') {
+                        playSFX('shield');
+                        myCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
+                        myCell.innerText = '🛡️';
+                        log(`[KHIÊN CỦA BẠN] Đã chặn đứng phát đạn của địch tại [${coordStr}]!`, 'text-cyan-300 font-bold');
+                    } else if (shot.result === 'hit' || shot.result === 'sunk') {
                         if (shot.result === 'sunk') playSFX('sunk');
                         else playSFX('hit');
                         myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
@@ -2409,11 +2565,33 @@
                 }
             }
 
-            // Kiểm tra kết thúc trận
+            // XỬ LÝ SỰ KIỆN ĐẦU HÀNG / DISCONNECT TRONG PVP
+            if (shot.is_surrender) {
+                phase = 'ended';
+                clearInterval(turnTimerInterval);
+                document.getElementById('turnTimerContainer').classList.add('hidden');
+                setSurrenderButtonVisibility(false);
+
+                if (shot.winner === myPvpRole) {
+                    playSFX('victory');
+                    document.getElementById('gameStatusText').innerText = "ĐỐI THỦ ĐÃ BỎ CUỘC / ĐẦU HÀNG! CHIẾN THẮNG DÀNH CHO BẠN!";
+                    log(`[CHIẾN THẮNG] ${shot.msg}`, "text-amber-300 font-black text-sm");
+                    triggerSkillAlert("ĐỐI THỦ ĐẦU HÀNG - BẠN CHIẾN THẮNG!", false);
+                } else {
+                    document.getElementById('gameStatusText').innerText = "BẠN ĐÃ ĐẦU HÀNG / RỜI TRẬN! KẾT QUẢ: THẤT BẠI.";
+                    log(`[THẤT BẠI] ${shot.msg}`, "text-rose-500 font-bold text-sm");
+                }
+                return;
+            }
+
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
                 document.getElementById('turnTimerContainer').classList.add('hidden');
+
+                setSurrenderButtonVisibility(false);
+
+                loadAchievements();
 
                 if (shot.winner === myPvpRole) {
                     playSFX('victory');
@@ -2427,7 +2605,6 @@
                 return;
             }
 
-            // Cập nhật lượt
             const isMyTurnNow = (shot.next_turn === myPvpRole);
             const botGrid = document.getElementById('botGrid');
 
@@ -2444,35 +2621,48 @@
         function handlePvpSkillEffect(effect) {
             if (!effect) return;
             const isMe = (effect.user_role === myPvpRole);
+            const msgToDisplay = isMe ? effect.my_msg : effect.enemy_msg;
 
-            log(`[KỸ NĂNG] ${effect.user_name}: ${effect.msg}`, isMe ? 'text-amber-300 font-bold' : 'text-rose-400 font-bold');
-            triggerSkillAlert(effect.msg, !isMe);
+            if (msgToDisplay) {
+                log(`[KỸ NĂNG] ${msgToDisplay}`, isMe ? 'text-amber-300 font-bold' : 'text-rose-400 font-bold');
+                triggerSkillAlert(msgToDisplay, !isMe);
+            }
 
-            if (effect.type === 'recon_sat' && isMe && effect.target) {
+            if (!isMe && effect.item) {
+                revealBotPowerup(effect.item);
+            }
+
+            // Vệ Tinh
+            if (effect.type === 'recon_sat') {
                 playSFX('sonar');
-                const cell = document.getElementById(`b-${effect.target.x}-${effect.target.y}`);
-                if (cell) {
-                    cell.className = 'cell bg-amber-400 border border-amber-200 text-black font-black animate-ping rounded-sm';
-                    cell.innerText = '🎯';
+                if (isMe && effect.target) {
+                    const cell = document.getElementById(`b-${effect.target.x}-${effect.target.y}`);
+                    if (cell) {
+                        cell.className = 'cell bg-amber-400 border border-amber-200 text-black font-black animate-ping rounded-sm';
+                        cell.innerText = '🎯';
+                    }
                 }
             }
 
-            if (effect.type === 'recon_scan') {
+            // Radar & Sonar
+            if (effect.type === 'recon_scan' || effect.type === 'recon_sonar') {
                 playSFX('sonar');
-                const prefix = isMe ? 'b' : 'p';
-                for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                        const tx = effect.cx + dx;
-                        const ty = effect.cy + dy;
-                        const c = document.getElementById(`${prefix}-${tx}-${ty}`);
-                        if (c && !c.dataset.fired) {
-                            c.classList.add(isMe ? 'bg-cyan-500/50' : 'bg-rose-500/50', 'animate-pulse');
-                            setTimeout(() => c.classList.remove('bg-cyan-500/50', 'bg-rose-500/50', 'animate-pulse'), 3000);
+                if (isMe) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const tx = effect.cx + dx;
+                            const ty = effect.cy + dy;
+                            const c = document.getElementById(`b-${tx}-${ty}`);
+                            if (c && !c.dataset.fired) {
+                                c.classList.add('bg-cyan-500/50', 'animate-pulse');
+                                setTimeout(() => c.classList.remove('bg-cyan-500/50', 'animate-pulse'), 3000);
+                            }
                         }
                     }
                 }
             }
 
+            // Khiên Năng Lượng
             if (effect.type === 'def_shield') {
                 playSFX('shield');
                 const grid = document.getElementById(isMe ? 'playerGrid' : 'botGrid');
@@ -2480,6 +2670,66 @@
                 setTimeout(() => {
                     grid.classList.remove('border-amber-400', 'shadow-[0_0_35px_rgba(251,191,36,0.6)]');
                 }, 4000);
+            }
+
+            // Màn Khói
+            if (effect.type === 'combat_smokescreen') {
+                const grid = document.getElementById(isMe ? 'playerGrid' : 'botGrid');
+                grid.classList.add('border-purple-500', 'shadow-[0_0_35px_rgba(168,85,247,0.5)]');
+                setTimeout(() => {
+                    grid.classList.remove('border-purple-500', 'shadow-[0_0_35px_rgba(168,85,247,0.5)]');
+                }, 5000);
+            }
+
+            // TÁI CẤU TRÚC / CƠ ĐỘNG: ĐỔI VẾT ĐẠN ĐỎ CŨ THÀNH Ô XÁM (TRƯỢT)
+            if (effect.type === 'def_relocate' && effect.reset_damage_coords && effect.reset_damage_coords.length > 0) {
+                effect.reset_damage_coords.forEach(coord => {
+                    // Cập nhật bên bàn cờ của người điều động
+                    const myCell = document.getElementById(`p-${coord.x}-${coord.y}`);
+                    if (myCell) {
+                        myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
+                        myCell.innerText = '•';
+                    }
+
+                    // Cập nhật bên bàn cờ của đối phương: Vết đỏ biến thành vết đạn xám
+                    const enemyCell = document.getElementById(`b-${coord.x}-${coord.y}`);
+                    if (enemyCell) {
+                        enemyCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
+                        enemyCell.innerText = '•';
+                    }
+                });
+            }
+        }
+
+        function renderMyFleetGrid(ships) {
+            const shipMap = {};
+            ships.forEach(ship => {
+                ship.coordinates.forEach(c => {
+                    shipMap[`${c.x},${c.y}`] = true;
+                });
+            });
+
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const el = document.getElementById(`p-${x}-${y}`);
+                    if (!el) continue;
+
+                    const isShip = !!shipMap[`${x},${y}`];
+                    const hasHit = el.innerText.trim() === '✕';
+                    const hasMiss = el.innerText.trim() === '•';
+
+                    if (hasHit) {
+                        el.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm';
+                    } else if (hasMiss) {
+                        el.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
+                    } else if (isShip) {
+                        el.className = 'cell bg-cyan-600/90 border border-cyan-400 text-white rounded-sm shadow-[0_0_8px_rgba(6,182,212,0.3)] animate-pulse';
+                        el.innerText = '';
+                    } else {
+                        el.className = 'cell bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-sm';
+                        el.innerText = '';
+                    }
+                }
             }
         }
     </script>
