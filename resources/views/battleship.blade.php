@@ -3361,6 +3361,8 @@
         function handlePvpShotResult(shot) {
             console.log("Xử lý kết quả bắn:", shot);
 
+            if (!shot) return;
+
             // NẾU LÀ SỰ KIỆN TIMEOUT (MẤT LƯỢT)
             if (shot.is_timeout) {
                 log(`[TIMEOUT] ${shot.msg}`, 'text-amber-400 font-bold');
@@ -3370,12 +3372,10 @@
                 const botGrid = document.getElementById('botGrid');
 
                 if (isMyTurnNow) {
-                    // GỠ SẠCH TẤT CẢ LỚP KHÓA VÀ LÀM SÁNG BÀN CỜ ĐỊCH
                     botGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
                     botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                     document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
                 } else {
-                    // KHÓA BÀN CỜ KHI ĐẾN LƯỢT ĐỐI THỦ
                     botGrid.classList.add('pointer-events-none', 'opacity-40');
                     botGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                     document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
@@ -3388,32 +3388,44 @@
             const coordStr = toCoordName(shot.x, shot.y);
             const resultToShow = shot.display_result || shot.result;
 
+            // NẾU LÀ MÌNH BẮN ĐỊCH -> CẬP NHẬT BÀN CỜ ĐỊCH (botGrid / b-x-y)
             if (isMeShooting) {
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
-                    if (resultToShow === 'hit' || resultToShow === 'sunk') {
+                    if (resultToShow === 'smoke_hidden') {
+                        targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
+                        targetCell.innerText = '💨';
+                        log(`[MÀN KHÓI] Hỏa lực tại [${coordStr}] bị khói mù che khuất! Không rõ trúng hay trượt!`, 'text-purple-400 font-bold');
+                    } else if (resultToShow === 'shield_blocked') {
+                        playSFX('shield');
+                        targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
+                        targetCell.innerText = '🛡️';
+                        log(`[KHIÊN CHẶN] Khiên năng lượng của đối thủ đã chặn đứng phát đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
+                    } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
+                        if (resultToShow === 'sunk') {
+                            playSFX('sunk');
+                            const sunkName = shot.ship || 'Chiến hạm';
+                            triggerSunkBanner(sunkName, true);
+                            markShipSunkOnHUD('enemy', sunkName);
+                        } else {
+                            playSFX('hit');
+                        }
+
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
+                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${resultToShow === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
                     } else {
+                        playSFX('miss');
                         targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
                         targetCell.innerText = '•';
+                        log(`[PVP] Bạn bắn trượt tại [${coordStr}]. Chuyển lượt đối thủ!`, 'text-slate-400');
                     }
                 }
                 recordShotMarker('enemy', shot.x, shot.y);
-            } else {
-                const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
-                if (myCell) {
-                    if (shot.result === 'hit' || shot.result === 'sunk') {
-                        myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
-                        myCell.innerText = '✕';
-                    } else {
-                        myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
-                        myCell.innerText = '•';
-                    }
-                }
-                recordShotMarker('player', shot.x, shot.y);
-            } else {
+            } 
+            // NẾU ĐỐI THỦ BẮN MÌNH -> CẬP NHẬT BÀN CỜ TA (playerGrid / p-x-y)
+            else {
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
                     if (shot.result === 'shield_blocked') {
@@ -3455,10 +3467,7 @@
                 fetch('/api/ranks/record-result', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({
-                        is_win: isIWin,
-                        gained_elo: isIWin ? 20 : 0
-                    })
+                    body: JSON.stringify({ is_win: isIWin, gained_elo: isIWin ? 20 : 0 })
                 }).then(async res => {
                     const data = await res.json();
                     if (data.status === 'success' && currentUser) {
@@ -3483,32 +3492,27 @@
                 return;
             }
 
+            // XỬ LÝ KHI KẾT THÚC TRẬN ĐẤU
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
                 
-                // Khóa hoàn toàn bảng cờ và tắt đồng hồ
                 const timerEl = document.getElementById('turnTimerContainer');
                 if (timerEl) timerEl.classList.add('hidden');
                 
                 const botGrid = document.getElementById('botGrid');
-                if (botGrid) {
-                    botGrid.classList.add('pointer-events-none', 'opacity-60');
-                }
+                if (botGrid) botGrid.classList.add('pointer-events-none', 'opacity-60');
+                
                 setSurrenderButtonVisibility(false);
 
                 const isIWin = (shot.winner === myPvpRole);
 
                 if (!isPvpResultRecorded) {
                     isPvpResultRecorded = true;
-
                     fetch('/api/ranks/record-result', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({
-                            is_win: isIWin,
-                            gained_elo: isIWin ? 25 : 0
-                        })
+                        body: JSON.stringify({ is_win: isIWin, gained_elo: isIWin ? 25 : 0 })
                     }).then(async res => {
                         const data = await res.json();
                         if (data.status === 'success' && currentUser) {
@@ -3535,14 +3539,17 @@
                 return;
             }
 
+            // ĐIỀU CHỈNH LƯỢT ĐÁNH TIẾP THEO
             const isMyTurnNow = (shot.next_turn === myPvpRole);
             const botGrid = document.getElementById('botGrid');
 
             if (isMyTurnNow) {
-                botGrid.classList.remove('pointer-events-none', 'opacity-60');
+                botGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
+                botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                 document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
             } else {
-                botGrid.classList.add('pointer-events-none', 'opacity-60');
+                botGrid.classList.add('pointer-events-none', 'opacity-40');
+                botGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                 document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
             }
             startTurnTimer(isMyTurnNow);
