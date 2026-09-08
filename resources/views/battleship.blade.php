@@ -3144,6 +3144,10 @@
                     const data = await res.json();
                     if (!res.ok || !data.room) return;
 
+                    if (data.my_role && data.my_role !== 'spectator') {
+                        myPvpRole = data.my_role; // Đồng bộ role chuẩn từ server
+                    }
+
                     const room = data.room;
 
                     // 1. Đóng modal chờ khi người 2 vào phòng
@@ -3659,9 +3663,12 @@
         function makeRpsChoice(myChoice) {
             playSFX('click');
 
+            // Ghi nhớ quân cờ mình vừa bấm chọn
+            window.lastRpsMyPick = myChoice;
+
             // NẾU LÀ ĐẤU MẠNG / RANK (2 NGƯỜI THẬT)
             if (gameMode === 'pvp') {
-                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                const roomCode = window.activePvpRoomCode || currentPvpRoomCode || currentRoomData?.room_code;
                 document.getElementById('rpsInstruction').innerText = `BẠN ĐÃ RA [${RPS_NAMES[myChoice]}]! ĐANG CHỜ ĐỐI THỦ RA QUÂN...`;
                 document.getElementById('rpsInstruction').className = 'text-xs text-amber-300 font-bold mt-1 animate-pulse';
                 document.getElementById('rpsSelectionPhase').classList.add('hidden');
@@ -3746,9 +3753,17 @@
             if (!data) return;
 
             if (data.type === 'result') {
-                // Xác định rõ lựa chọn của ta và của địch
-                const myChoice = (myPvpRole === 'player1') ? data.p1_choice : data.p2_choice;
-                const enemyChoice = (myPvpRole === 'player1') ? data.p2_choice : data.p1_choice;
+                // Xác định chính xác quân của mình và của đối phương
+                let myChoice = window.lastRpsMyPick;
+                let enemyChoice = null;
+
+                if (myPvpRole === 'player1') {
+                    myChoice = myChoice || data.p1_choice;
+                    enemyChoice = data.p2_choice;
+                } else {
+                    myChoice = myChoice || data.p2_choice;
+                    enemyChoice = data.p1_choice;
+                }
 
                 if (!myChoice || !enemyChoice) return;
 
@@ -3766,6 +3781,7 @@
                     document.getElementById('rpsInstruction').innerText = 'HAI BÊN HÒA NHAU! HÃY RA QUÂN LẠI!';
                     document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
                     setTimeout(() => {
+                        window.lastRpsMyPick = null;
                         document.getElementById('rpsSelectionPhase').classList.remove('hidden');
                         document.getElementById('rpsVersusPhase').classList.add('hidden');
                         document.getElementById('rpsInstruction').innerText = 'Hãy ra quân (Kéo - Búa - Bao) để phân định quyền ưu tiên tác chiến!';
@@ -3774,7 +3790,7 @@
                     return;
                 }
 
-                // TỰ TÍNH TOÁN NGAY TẠI MÁY ĐỂ CHẮC CHẮN 100% CÓ 1 BÊN THẤY NÚT CHỌN
+                // Thuật toán so kèo trực tiếp: Kéo thắng Bao, Bao thắng Búa, Búa thắng Kéo
                 const winRules = { rock: 'scissors', scissors: 'paper', paper: 'rock' };
                 const iWon = (winRules[myChoice] === enemyChoice);
 
@@ -3782,13 +3798,13 @@
                     playSFX('victory');
                     document.getElementById('rpsTurnChoicePhase').classList.remove('hidden');
                     document.getElementById('rpsEnemyTurnChoicePhase').classList.add('hidden');
-                    log("[TRANH ĐOẠT] Bạn đã CHIẾN THẮNG Kéo Búa Bao! Hãy chọn lượt khai hỏa!", "text-emerald-400 font-bold");
+                    log("[TRANH ĐOẠT] Bạn đã CHIẾN THẮNG Kéo Búa Bao! Hãy chọn quyền khai hỏa!", "text-emerald-400 font-bold");
                 } else {
                     playSFX('alarm');
                     document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
                     document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
                     document.getElementById('rpsEnemyDecisionText').innerText = "Đối phương chiến thắng tranh đoạt! Đang chờ đối thủ quyết định lượt đi...";
-                    log("[TRANH ĐOẠT] Đối thủ chiến thắng Kéo Búa Bao! Đang chờ đối thủ chọn lượt...", "text-rose-400 font-bold");
+                    log("[TRANH ĐOẠT] Đối phương thắng Kéo Búa Bao! Đang chờ đối thủ chọn lượt...", "text-rose-400 font-bold");
                 }
             }
 
