@@ -101,47 +101,48 @@
             scrollbar-width: thin;
             scrollbar-color: #0e7490 #090d16;
         }
-        /* Hiệu ứng ô phát bắn mới nhất (Last Shot Reticle) */
-        @keyframes pulseTargetRing {
+        /* Phát bắn MỚI NHẤT (Lượt 1 gần nhất) */
+        @keyframes pulseCurrentShot {
             0% {
-                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 0 0 rgba(244, 63, 94, 0.9);
-                transform: scale(0.96);
+                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 10px rgba(244, 63, 94, 0.9);
             }
             50% {
-                box-shadow: inset 0 0 0 3px #fb7185, 0 0 14px 4px rgba(244, 63, 94, 0.7);
-                transform: scale(1.04);
+                box-shadow: inset 0 0 0 3px #fb7185, 0 0 18px 4px rgba(244, 63, 94, 0.8);
             }
             100% {
-                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 0 0 rgba(244, 63, 94, 0);
-                transform: scale(0.96);
+                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 10px rgba(244, 63, 94, 0.9);
             }
         }
 
-        .last-shot-active {
+        .shot-latest {
             position: relative;
-            z-index: 20;
-            animation: pulseTargetRing 1.4s infinite ease-in-out !important;
+            z-index: 25;
+            animation: pulseCurrentShot 1.2s infinite ease-in-out !important;
         }
-
-        .last-shot-active::after {
+        .shot-latest::after {
             content: '🎯';
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -9px;
+            right: -9px;
             font-size: 13px;
-            filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.8));
-            animation: bounce 1s infinite alternate;
+            filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.9));
             pointer-events: none;
         }
 
-        /* Các ô đã bắn trúng / hụt trước đó */
-        .cell-hit-logged {
+        /* Phát bắn TRƯỚC ĐÓ (Lượt 2 gần nhất) */
+        .shot-previous {
             position: relative;
-            border-color: rgba(239, 68, 68, 0.8) !important;
+            z-index: 20;
+            box-shadow: inset 0 0 0 2px #f59e0b, 0 0 8px rgba(245, 158, 11, 0.5) !important;
         }
-        .cell-miss-logged {
-            position: relative;
-            border-color: rgba(148, 163, 184, 0.4) !important;
+        .shot-previous::after {
+            content: '⏱️';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 11px;
+            filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.8));
+            pointer-events: none;
         }
     </style>
 </head>
@@ -992,25 +993,6 @@
         let sfxEnabled = true;
         let audioCtx = null;
 
-        let lastShotCoord = null;
-
-        function markLastShot(boardPrefix, x, y) {
-            // Xóa tâm ngắm ở ô bắn trước đó
-            if (lastShotCoord) {
-                const prevCell = document.getElementById(`${lastShotCoord.prefix}-${lastShotCoord.x}-${lastShotCoord.y}`);
-                if (prevCell) {
-                    prevCell.classList.remove('last-shot-active');
-                }
-            }
-
-            // Gán tâm ngắm phát sáng và radar nhấp nháy cho ô vừa bắn
-            lastShotCoord = { prefix: boardPrefix, x, y };
-            const currCell = document.getElementById(`${boardPrefix}-${x}-${y}`);
-            if (currCell) {
-                currCell.classList.add('last-shot-active');
-            }
-        }
-
         function openGuideModal() {
             const m = document.getElementById('guideModal');
             if (m) {
@@ -1224,6 +1206,53 @@
                 osc.stop(ctx.currentTime + 0.05);
             }
         };
+
+        // Lưu lịch sử 2 phát bắn gần nhất cho từng bàn cờ ('player' và 'enemy')
+        const shotHistory = {
+            player: [], // Lịch sử phát bắn Bot bắn vào ta
+            enemy: []   // Lịch sử phát bắn ta bắn vào Bot/Địch
+        };
+
+        function recordShotMarker(boardKey, x, y) {
+            const prefix = (boardKey === 'enemy') ? 'b' : 'p';
+            const list = shotHistory[boardKey];
+
+            // 1. Xóa class cũ của các ô đang lưu
+            if (list.length > 0) {
+                const last1 = document.getElementById(`${prefix}-${list[0].x}-${list[0].y}`);
+                if (last1) last1.classList.remove('shot-latest', 'shot-previous');
+            }
+            if (list.length > 1) {
+                const last2 = document.getElementById(`${prefix}-${list[1].x}-${list[1].y}`);
+                if (last2) last2.classList.remove('shot-latest', 'shot-previous');
+            }
+
+            // 2. Đẩy tọa độ mới vào đầu danh sách (giữ tối đa 2 lượt)
+            list.unshift({ x, y });
+            if (list.length > 2) list.pop();
+
+            // 3. Gắn lại class phân cấp
+            // Ô mới nhất (Lượt 1)
+            const currentCell = document.getElementById(`${prefix}-${list[0].x}-${list[0].y}`);
+            if (currentCell) currentCell.classList.add('shot-latest');
+
+            // Ô ngay trước đó (Lượt 2)
+            if (list.length > 1) {
+                const prevCell = document.getElementById(`${prefix}-${list[1].x}-${list[1].y}`);
+                if (prevCell) prevCell.classList.add('shot-previous');
+            }
+        }
+
+        function clearShotMarkers() {
+            ['player', 'enemy'].forEach(bKey => {
+                const prefix = (bKey === 'enemy') ? 'b' : 'p';
+                shotHistory[bKey].forEach(coord => {
+                    const cell = document.getElementById(`${prefix}-${coord.x}-${coord.y}`);
+                    if (cell) cell.classList.remove('shot-latest', 'shot-previous');
+                });
+                shotHistory[bKey] = [];
+            });
+        }
 
         function playSFX(name) {
             if (SoundFX[name]) SoundFX[name]();
@@ -2413,11 +2442,7 @@
         }
 
         function resetSetup() {
-            if (lastShotCoord) {
-                const prevCell = document.getElementById(`${lastShotCoord.prefix}-${lastShotCoord.x}-${lastShotCoord.y}`);
-                if (prevCell) prevCell.classList.remove('last-shot-active');
-                lastShotCoord = null;
-            }
+            clearShotMarkers();
             placedShips = [];
             selectedShipIndex = 0;
             phase = 'setup';
@@ -2587,7 +2612,7 @@
             const coordStr = toCoordName(x, y);
             const resultToShow = shot.display_result || shot.result;
 
-            markLastShot('b', x, y);
+            recordShotMarker('enemy', x, y);
 
             if (resultToShow === 'smoke_hidden') {
                 targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
@@ -2724,7 +2749,7 @@
             const pCell = document.getElementById(`p-${bShot.x}-${bShot.y}`);
             const bCoordStr = toCoordName(bShot.x, bShot.y);
 
-            markLastShot('p', bShot.x, bShot.y);
+            recordShotMarker('player', bShot.x, bShot.y);
 
             setTimeout(() => {
                 if (bShot.result === 'hit' || bShot.result === 'sunk') {
@@ -3105,7 +3130,7 @@
             const resultToShow = shot.display_result || shot.result;
 
             if (isMeShooting) {
-                markLastShot('b', shot.x, shot.y);
+                recordShotMarker('enemy', shot.x, shot.y);
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
@@ -3132,7 +3157,7 @@
                     }
                 }
             } else {
-                markLastShot('p', shot.x, shot.y);
+                recordShotMarker('player', shot.x, shot.y);
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
                     if (shot.result === 'shield_blocked') {
