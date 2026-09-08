@@ -192,7 +192,11 @@
                 <span class="text-xs uppercase tracking-widest font-semibold text-slate-400">Chọn tàu:</span>
                 <div id="shipButtons" class="flex gap-2 flex-wrap"></div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <button id="btnAutoDeploy" onclick="autoDeployShips()" class="bg-amber-600/80 hover:bg-amber-500 text-amber-100 border border-amber-400/40 px-3.5 py-1.5 rounded-md text-xs uppercase tracking-wider font-bold transition shadow-[0_0_10px_rgba(245,158,11,0.25)] flex items-center gap-1.5">
+                    <span>🎲</span>
+                    <span>TỰ ĐỘNG XẾP</span>
+                </button>
                 <button id="btnRotate" onclick="toggleOrientation()" class="bg-indigo-600/80 hover:bg-indigo-600 text-indigo-100 border border-indigo-400/30 px-3.5 py-1.5 rounded-md text-xs uppercase tracking-wider font-bold transition shadow-[0_0_10px_rgba(99,102,241,0.2)]">
                     Hướng: <span id="orientationText" class="text-white font-extrabold underline decoration-indigo-300">Ngang</span> (Phím R)
                 </button>
@@ -1954,22 +1958,66 @@
             SHIPS_DATA.forEach((s, idx) => {
                 const isPlaced = placedShips.some(p => p.name === s.name);
                 const btn = document.createElement('button');
-                btn.className = `px-3 py-1 text-xs rounded-md font-semibold tracking-wider uppercase border transition ${
-                    isPlaced ? 'bg-slate-800/40 text-slate-600 border-slate-800/60 line-through cursor-not-allowed' :
-                    selectedShipIndex === idx 
-                        ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.4)]' 
-                        : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700 hover:border-slate-600'
-                }`;
-                btn.innerText = `${s.name} [${s.size}]`;
-                if (!isPlaced) {
-                    btn.onclick = () => { selectedShipIndex = idx; renderShipButtons(); playSFX('click'); };
+                
+                if (isPlaced) {
+                    // Trạng thái đã đặt: Hiển thị icon thu hồi (Undo chiếc này)
+                    btn.className = 'group px-3 py-1 text-xs rounded-md font-semibold tracking-wider uppercase border transition bg-cyan-950/50 border-cyan-500/50 text-cyan-300 hover:bg-rose-950/80 hover:border-rose-500 hover:text-rose-300';
+                    btn.title = `Bấm để thu hồi và đặt lại tàu ${s.name}`;
+                    btn.innerHTML = `<span>✓ ${s.name} [${s.size}]</span> <span class="hidden group-hover:inline ml-1 font-bold text-rose-400">↺ GỠ</span>`;
+                    btn.onclick = () => removeSpecificShip(s.name, idx);
+                } else {
+                    // Trạng thái chưa đặt
+                    btn.className = `px-3 py-1 text-xs rounded-md font-semibold tracking-wider uppercase border transition ${
+                        selectedShipIndex === idx 
+                            ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.4)] font-bold' 
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700 hover:border-slate-600'
+                    }`;
+                    btn.innerText = `${s.name} [${s.size}]`;
+                    btn.onclick = () => { 
+                        selectedShipIndex = idx; 
+                        renderShipButtons(); 
+                        playSFX('click'); 
+                    };
                 }
                 container.appendChild(btn);
             });
 
             const btnStart = document.getElementById('btnStartWar');
-            btnStart.innerText = `Vào Trận (${placedShips.length}/5)`;
-            btnStart.disabled = placedShips.length < 5;
+            if (btnStart) {
+                btnStart.innerText = `Vào Trận (${placedShips.length}/5)`;
+                btnStart.disabled = placedShips.length < 5;
+            }
+        }
+
+        // HÀM THU HỒI / UNDO ĐÍCH DANH CHIẾC TÀU ĐÃ ĐẶT
+        function removeSpecificShip(shipName, shipIndex = null) {
+            if (phase !== 'setup') return;
+
+            const shipToRemove = placedShips.find(s => s.name === shipName);
+            if (!shipToRemove) return;
+
+            // Xóa vết trên bàn cờ ta
+            shipToRemove.coordinates.forEach(c => {
+                const cell = document.getElementById(`p-${c.x}-${c.y}`);
+                if (cell) {
+                    cell.className = 'cell bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-sm cursor-pointer hover:border-cyan-500/50';
+                }
+            });
+
+            // Gỡ khỏi mảng placedShips
+            placedShips = placedShips.filter(s => s.name !== shipName);
+
+            // Chuyển luôn con trỏ chọn sang tàu vừa gỡ để đặt lại
+            if (shipIndex !== null) {
+                selectedShipIndex = shipIndex;
+            } else {
+                const foundIdx = SHIPS_DATA.findIndex(s => s.name === shipName);
+                if (foundIdx !== -1) selectedShipIndex = foundIdx;
+            }
+
+            playSFX('miss');
+            log(`Đã thu hồi tàu [${shipName}]. Bạn có thể chọn vị trí đặt lại!`, 'text-amber-400');
+            renderShipButtons();
         }
 
         function buildGridWithHeaders(containerId, isBot = false) {
@@ -2071,6 +2119,80 @@
             const nextIdx = SHIPS_DATA.findIndex(s => !placedShips.some(p => p.name === s.name));
             if (nextIdx !== -1) selectedShipIndex = nextIdx;
 
+            renderShipButtons();
+        }
+
+        /* ===================================================
+           TỰ ĐỘNG DÀN TRẬN NGẪU NHIÊN (RANDOM AUTO DEPLOY)
+           =================================================== */
+        function autoDeployShips() {
+            if (phase !== 'setup') return;
+
+            // Xóa sạch các ô tàu hiện có trên bàn cờ
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const cell = document.getElementById(`p-${x}-${y}`);
+                    if (cell) {
+                        cell.className = 'cell bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-sm cursor-pointer hover:border-cyan-500/50';
+                    }
+                }
+            }
+
+            placedShips = [];
+
+            // Thuật toán đặt ngẫu nhiên lần lượt 5 con tàu
+            SHIPS_DATA.forEach(shipSpec => {
+                let placed = false;
+                let attempts = 0;
+
+                while (!placed && attempts < 200) {
+                    attempts++;
+                    const isHoriz = Math.random() < 0.5;
+                    const maxX = isHoriz ? (10 - shipSpec.size) : 9;
+                    const maxY = isHoriz ? 9 : (10 - shipSpec.size);
+
+                    const startX = Math.floor(Math.random() * (maxX + 1));
+                    const startY = Math.floor(Math.random() * (maxY + 1));
+
+                    const testCoords = [];
+                    let overlap = false;
+
+                    for (let i = 0; i < shipSpec.size; i++) {
+                        const cx = isHoriz ? startX + i : startX;
+                        const cy = isHoriz ? startY : startY + i;
+
+                        // Kiểm tra va chạm với tàu đã xếp
+                        if (placedShips.some(p => p.coordinates.some(c => c.x === cx && c.y === cy))) {
+                            overlap = true;
+                            break;
+                        }
+                        testCoords.push({ x: cx, y: cy });
+                    }
+
+                    if (!overlap) {
+                        placedShips.push({
+                            name: shipSpec.name,
+                            size: shipSpec.size,
+                            coordinates: testCoords,
+                            hits: 0
+                        });
+                        placed = true;
+                    }
+                }
+            });
+
+            // Vẽ lại toàn bộ 5 tàu lên bàn cờ
+            placedShips.forEach(ship => {
+                ship.coordinates.forEach(c => {
+                    const el = document.getElementById(`p-${c.x}-${c.y}`);
+                    if (el) {
+                        el.className = 'cell bg-cyan-600/90 border border-cyan-400 text-white rounded-sm shadow-[0_0_8px_rgba(6,182,212,0.3)]';
+                    }
+                });
+            });
+
+            playSFX('victory');
+            log(`Đã tạo ngẫu nhiên đội hình 5 chiến hạm! Bấm tiếp nếu muốn roll lại.`, 'text-emerald-400 font-bold');
             renderShipButtons();
         }
 
