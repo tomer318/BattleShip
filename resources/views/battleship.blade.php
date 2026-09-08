@@ -3096,23 +3096,22 @@
             openModal('pvpModal');
         }
 
-        // Khởi tạo kết nối Pusher/Reverb thích ứng cả Local lẫn Render HTTPS
-        const isHttps = window.location.protocol === 'https:';
+        // Chỉ kết nối WebSocket khi chạy ở Local (localhost/127.0.0.1)
+        // Khi chạy trên Render (onrender.com), tắt Pusher để triệt tiêu 100% lỗi đỏ 404 và dùng Smart Polling
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         let pusherClient = null;
-        try {
-            pusherClient = new Pusher("{{ env('REVERB_APP_KEY', 'battleship_key') }}", {
-                cluster: 'mt1',
-                wsHost: window.location.hostname,
-                wsPort: isHttps ? 443 : {{ env('REVERB_PORT', 8080) }},
-                wssPort: isHttps ? 443 : {{ env('REVERB_PORT', 8080) }},
-                forceTLS: isHttps,
-                enabledTransports: ['ws', 'wss'],
-            });
-            pusherClient.connection.bind('error', function(err) {
-                // Nuốt lỗi WebSocket 404 để chuyển sang Smart Polling
-                console.log("WebSocket chưa bật, kích hoạt Smart Polling real-time dự phòng.");
-            });
-        } catch(e) {}
+
+        if (isLocal) {
+            try {
+                pusherClient = new Pusher("{{ env('REVERB_APP_KEY', 'battleship_key') }}", {
+                    cluster: 'mt1',
+                    wsHost: window.location.hostname,
+                    wsPort: {{ env('REVERB_PORT', 8080) }},
+                    forceTLS: false,
+                    enabledTransports: ['ws'],
+                });
+            } catch (e) {}
+        }
 
         function subscribeToRoom(roomCode) {
             if (pusherClient) {
@@ -3167,7 +3166,7 @@
 
                     const room = data.room;
 
-                    // 1. Khi người thứ 2 vào phòng: Đóng popup chờ của người thứ 1
+                    // 1. Khi người thứ 2 vào phòng: Tự động đóng modal chờ của người 1
                     const waitingSection = document.getElementById('pvpWaitingSection');
                     if (waitingSection && !waitingSection.classList.contains('hidden') && room.player2_id) {
                         handlePlayerJoined({ room });
@@ -3178,25 +3177,30 @@
                         onBothPlayersReady(room);
                     }
 
-                    // 3. Đồng bộ phát bắn mới giữa 2 bên
+                    // 3. Khi một bên đã chọn quyền đi trước trong Oẳn Tù Tì -> chuyển thẳng vào trận chiến
+                    if (room.status === 'playing' && phase === 'setup') {
+                        closeModal('rpsModal');
+                        realStartPvpBattle(room.current_turn);
+                    }
+
+                    // 4. Đồng bộ các phát bắn mới nhất
                     const totalShots = (room.p1_shots ? room.p1_shots.length : 0) + (room.p2_shots ? room.p2_shots.length : 0);
                     if (totalShots > lastSyncedShotCount && phase === 'playing') {
                         lastSyncedShotCount = totalShots;
 
-                        // Xác định phát bắn mới nhất vừa diễn ra
                         const allShots = [];
                         (room.p1_shots || []).forEach(s => allShots.push(Object.assign({ shooter: 'player1' }, s)));
                         (room.p2_shots || []).forEach(s => allShots.push(Object.assign({ shooter: 'player2' }, s)));
 
                         if (allShots.length > 0) {
                             const latest = allShots[allShots.length - 1];
-                            // Nếu phát bắn này do đối thủ bắn, cập nhật lên bàn cờ ta
                             if (latest.shooter !== myPvpRole) {
                                 handlePvpShotResult({
                                     shooter_role: latest.shooter,
                                     x: latest.x,
                                     y: latest.y,
                                     result: latest.result,
+                                    ship: latest.ship,
                                     next_turn: room.current_turn,
                                     status: room.status,
                                     winner: room.winner
@@ -3205,7 +3209,7 @@
                         }
                     }
 
-                    // 4. Đồng bộ kết thúc trận
+                    // 5. Đồng bộ kết thúc ván đấu
                     if (room.status === 'finished' && phase === 'playing') {
                         handlePvpShotResult({
                             status: 'finished',
@@ -3214,7 +3218,7 @@
                         });
                     }
                 } catch(err) {}
-            }, 1200);
+            }, 1000);
         }
 
         function handlePlayerJoined(data) {
