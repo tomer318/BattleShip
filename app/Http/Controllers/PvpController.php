@@ -854,4 +854,31 @@ class PvpController extends Controller
         }
         return response()->json(['room' => $room]);
     }
+
+    public function syncRoomState(Request $request): JsonResponse
+    {
+        $roomCode = strtoupper(trim($request->input('room_code')));
+        $room = Room::where('room_code', $roomCode)->first();
+
+        if (!$room) {
+            return response()->json(['error' => 'Phòng không tồn tại'], 404);
+        }
+
+        /** @var User|null $user */
+        $user = Auth::user();
+        $myRole = ($user && $room->player1_id === $user->id) ? 'player1' : 'player2';
+
+        return response()->json([
+            'status'       => 'success',
+            'room'         => $room,
+            'my_role'      => $myRole,
+            'current_turn' => $room->current_turn,
+            'game_status'  => $room->status,
+            'winner'       => $room->winner,
+            'p1_shots'     => $room->p1_shots ?? [],
+            'p2_shots'     => $room->p2_shots ?? [],
+            'p1_ready'     => (bool) $room->p1_ready,
+            'p2_ready'     => (bool) $room->p2_ready,
+        ]);
+    }
 }

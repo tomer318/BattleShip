@@ -48,3 +48,4 @@ Route::post('/api/ranks/record-result', [RankController::class, 'recordResult'])
 Route::post('/api/pvp/rps-choice', [PvpController::class, 'rpsChoice']);
 Route::post('/api/pvp/rps-decide', [PvpController::class, 'rpsDecideTurn']);
 Route::get('/api/pvp/room-status', [App\Http\Controllers\PvpController::class, 'getRoomStatus']);
+Route::get('/api/pvp/sync-state', [App\Http\Controllers\PvpController::class, 'syncRoomState']);
