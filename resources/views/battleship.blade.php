@@ -3360,10 +3360,9 @@
 
         function handlePvpShotResult(shot) {
             console.log("Xử lý kết quả bắn:", shot);
-
             if (!shot) return;
 
-            // NẾU LÀ SỰ KIỆN TIMEOUT (MẤT LƯỢT)
+            // 1. Xử lý timeout (mất lượt)
             if (shot.is_timeout) {
                 log(`[TIMEOUT] ${shot.msg}`, 'text-amber-400 font-bold');
                 triggerSkillAlert(shot.msg, (shot.shooter_role === myPvpRole));
@@ -3388,7 +3387,7 @@
             const coordStr = toCoordName(shot.x, shot.y);
             const resultToShow = shot.display_result || shot.result;
 
-            // NẾU LÀ MÌNH BẮN ĐỊCH -> CẬP NHẬT BÀN CỜ ĐỊCH (botGrid / b-x-y)
+            // 2. Nếu là MÌNH bắn đối phương -> Cập nhật bàn cờ địch (botGrid / b-x-y)
             if (isMeShooting) {
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
@@ -3396,35 +3395,33 @@
                     if (resultToShow === 'smoke_hidden') {
                         targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
                         targetCell.innerText = '💨';
-                        log(`[MÀN KHÓI] Hỏa lực tại [${coordStr}] bị khói mù che khuất! Không rõ trúng hay trượt!`, 'text-purple-400 font-bold');
+                        log(`[MÀN KHÓI] Hỏa lực tại [${coordStr}] bị khói mù che khuất!`, 'text-purple-400 font-bold');
                     } else if (resultToShow === 'shield_blocked') {
                         playSFX('shield');
                         targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
                         targetCell.innerText = '🛡️';
-                        log(`[KHIÊN CHẶN] Khiên năng lượng của đối thủ đã chặn đứng phát đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
+                        log(`[KHIÊN CHẶN] Khiên năng lượng đối thủ đã chặn đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
                     } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
                         if (resultToShow === 'sunk') {
                             playSFX('sunk');
-                            const sunkName = shot.ship || 'Chiến hạm';
-                            triggerSunkBanner(sunkName, true);
-                            markShipSunkOnHUD('enemy', sunkName);
+                            triggerSunkBanner(shot.ship || 'Chiến hạm', true);
+                            markShipSunkOnHUD('enemy', shot.ship);
                         } else {
                             playSFX('hit');
                         }
-
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
-                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${resultToShow === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
+                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]!`, 'text-emerald-400 font-bold');
                     } else {
                         playSFX('miss');
                         targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
                         targetCell.innerText = '•';
-                        log(`[PVP] Bạn bắn trượt tại [${coordStr}]. Chuyển lượt đối thủ!`, 'text-slate-400');
+                        log(`[PVP] Bạn bắn trượt tại [${coordStr}].`, 'text-slate-400');
                     }
                 }
                 recordShotMarker('enemy', shot.x, shot.y);
             } 
-            // NẾU ĐỐI THỦ BẮN MÌNH -> CẬP NHẬT BÀN CỜ TA (playerGrid / p-x-y)
+            // 3. Nếu ĐỐI THỦ bắn mình -> Cập nhật bàn cờ ta (playerGrid / p-x-y)
             else {
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
@@ -3432,17 +3429,15 @@
                         playSFX('shield');
                         myCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
                         myCell.innerText = '🛡️';
-                        log(`[KHIÊN CỦA BẠN] Đã chặn đứng phát đạn của địch tại [${coordStr}]!`, 'text-cyan-300 font-bold');
+                        log(`[KHIÊN CỦA BẠN] Đã chặn đứng đạn địch tại [${coordStr}]!`, 'text-cyan-300 font-bold');
                     } else if (shot.result === 'hit' || shot.result === 'sunk') {
                         if (shot.result === 'sunk') {
                             playSFX('sunk');
-                            const sunkName = shot.ship || 'Chiến hạm';
-                            triggerSunkBanner(sunkName, false);
-                            markShipSunkOnHUD('player', sunkName);
+                            triggerSunkBanner(shot.ship || 'Chiến hạm', false);
+                            markShipSunkOnHUD('player', shot.ship);
                         } else {
                             playSFX('hit');
                         }
-
                         myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
                         myCell.innerText = '✕';
                         log(`[CẢNH BÁO] Đối phương bắn TRÚNG tàu của bạn tại [${coordStr}]!`, 'text-rose-400 font-bold');
@@ -3456,90 +3451,30 @@
                 recordShotMarker('player', shot.x, shot.y);
             }
 
-            // XỬ LÝ SỰ KIỆN ĐẦU HÀNG / DISCONNECT TRONG PVP
+            // 4. Xử lý đầu hàng
             if (shot.is_surrender) {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
                 document.getElementById('turnTimerContainer').classList.add('hidden');
                 setSurrenderButtonVisibility(false);
-
                 const isIWin = (shot.winner === myPvpRole);
-                fetch('/api/ranks/record-result', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({ is_win: isIWin, gained_elo: isIWin ? 20 : 0 })
-                }).then(async res => {
-                    const data = await res.json();
-                    if (data.status === 'success' && currentUser) {
-                        currentUser.elo = data.elo;
-                        currentUser.rank_tier = data.rank_tier;
-                        if (isIWin) currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
-                        else currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
-                        renderUserHUD();
-                    }
-                    loadAchievements();
-                });
-
-                if (isIWin) {
-                    playSFX('victory');
-                    document.getElementById('gameStatusText').innerText = "ĐỐI THỦ ĐÃ BỎ CUỘC / ĐẦU HÀNG! CHIẾN THẮNG DÀNH CHO BẠN! (+20 ELO)";
-                    log(`[CHIẾN THẮNG] ${shot.msg} (+20 ELO)`, "text-amber-300 font-black text-sm");
-                    triggerSkillAlert("ĐỐI THỦ ĐẦU HÀNG - BẠN CHIẾN THẮNG!", false);
-                } else {
-                    document.getElementById('gameStatusText').innerText = "BẠN ĐÃ ĐẦU HÀNG / RỜI TRẬN! KẾT QUẢ: THẤT BẠI. (-15 ELO)";
-                    log(`[THẤT BẠI] ${shot.msg} (-15 ELO)`, "text-rose-500 font-bold text-sm");
-                }
+                document.getElementById('gameStatusText').innerText = isIWin ? "ĐỐI THỦ ĐẦU HÀNG! BẠN THẮNG!" : "BẠN ĐÃ ĐẦU HÀNG!";
                 return;
             }
 
-            // XỬ LÝ KHI KẾT THÚC TRẬN ĐẤU
+            // 5. Xử lý kết thúc trận đấu
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
-                
-                const timerEl = document.getElementById('turnTimerContainer');
-                if (timerEl) timerEl.classList.add('hidden');
-                
-                const botGrid = document.getElementById('botGrid');
-                if (botGrid) botGrid.classList.add('pointer-events-none', 'opacity-60');
-                
+                document.getElementById('turnTimerContainer').classList.add('hidden');
+                document.getElementById('botGrid').classList.add('pointer-events-none', 'opacity-60');
                 setSurrenderButtonVisibility(false);
-
                 const isIWin = (shot.winner === myPvpRole);
-
-                if (!isPvpResultRecorded) {
-                    isPvpResultRecorded = true;
-                    fetch('/api/ranks/record-result', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({ is_win: isIWin, gained_elo: isIWin ? 25 : 0 })
-                    }).then(async res => {
-                        const data = await res.json();
-                        if (data.status === 'success' && currentUser) {
-                            currentUser.elo = data.elo;
-                            currentUser.rank_tier = data.rank_tier;
-                            if (isIWin) currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
-                            else currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
-                            renderUserHUD();
-                        }
-                        loadAchievements();
-                    });
-                }
-
-                if (isIWin) {
-                    playSFX('victory');
-                    document.getElementById('gameStatusText').innerText = "🏆 CHIẾN THẮNG CHUNG CUỘC! TOÀN BỘ HẠM ĐỘI ĐỐI PHƯƠNG ĐÃ BỊ TIÊU DIỆT! (+25 ELO)";
-                    log("[CHIẾN CÔNG PVP] Bạn đã giành chiến thắng chung cuộc! (+25 ELO)", "text-amber-300 font-black text-sm");
-                    triggerSkillAlert("🏆 CHIẾN THẮNG HUY HOÀNG! BẠN ĐƯỢC +25 ELO", false);
-                } else {
-                    document.getElementById('gameStatusText').innerText = "☠️ THẤT BẠI TÁC CHIẾN! TOÀN BỘ HẠM ĐỘI CỦA BẠN ĐÃ BỊ ĐỐI PHƯƠNG BẮN CHÌM! (-15 ELO)";
-                    log("[THẤT BẠI PVP] Hạm đội của bạn đã bị tiêu diệt. (-15 ELO)", "text-rose-500 font-bold text-sm");
-                    triggerSkillAlert("☠️ THẤT BẠI! TOÀN BỘ HẠM ĐỘI BỊ BẮN HẠ (-15 ELO)", true);
-                }
+                document.getElementById('gameStatusText').innerText = isIWin ? "🏆 CHIẾN THẮNG CHUNG CUỘC!" : "☠️ THẤT BẠI TÁC CHIẾN!";
                 return;
             }
 
-            // ĐIỀU CHỈNH LƯỢT ĐÁNH TIẾP THEO
+            // 6. Chuyển lượt đánh tiếp theo
             const isMyTurnNow = (shot.next_turn === myPvpRole);
             const botGrid = document.getElementById('botGrid');
 
@@ -3554,7 +3489,7 @@
             }
             startTurnTimer(isMyTurnNow);
         }
-
+        
         function handlePvpSkillEffect(effect) {
             if (!effect) return;
             const isMe = (effect.user_role === myPvpRole);
