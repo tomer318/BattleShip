@@ -3127,12 +3127,14 @@
             clearInterval(pvpSyncInterval);
             lastSyncedShotCount = 0;
             hasHandledPlayerJoined = false;
+            gameMode = 'pvp'; // Đảm bảo luôn kích hoạt pvp
+
+            console.log("Kích hoạt Smart Polling cho phòng:", roomCode);
 
             pvpSyncInterval = setInterval(async () => {
-                // Lấy mã phòng an toàn từ window hoặc tham số truyền vào
-                const activeCode = window.activePvpRoomCode || roomCode;
+                const activeCode = window.activePvpRoomCode || currentPvpRoomCode || roomCode;
 
-                if (gameMode !== 'pvp' || !activeCode || phase === 'ended') {
+                if (!activeCode || phase === 'ended') {
                     if (phase === 'ended') clearInterval(pvpSyncInterval);
                     return;
                 }
@@ -3144,12 +3146,11 @@
 
                     const room = data.room;
 
-                    // 1. Phía máy 1 (chủ phòng): Khi có player2 vào phòng thì lập tức đóng popup chờ
+                    // 1. Phía máy 1: Nếu modal chờ đang hiển thị và server đã có người thứ 2 vào phòng
                     const pvpModal = document.getElementById('pvpModal');
-                    const waitingSection = document.getElementById('pvpWaitingSection');
-                    const isWaitingOpen = pvpModal && !pvpModal.classList.contains('hidden') && waitingSection && !waitingSection.classList.contains('hidden');
+                    const isModalStillOpen = pvpModal && !pvpModal.classList.contains('hidden');
 
-                    if (room.player2_id && (isWaitingOpen || !hasHandledPlayerJoined)) {
+                    if (room.player2_id && (isModalStillOpen || !hasHandledPlayerJoined)) {
                         hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
@@ -3226,6 +3227,8 @@
         async function createPvpRoom() {
             try {
                 myPvpRole = 'player1';
+                gameMode = 'pvp'; // <-- PHẢI GÁN NGAY Ở ĐÂY ĐỂ POLLING HOẠT ĐỘNG!
+                
                 const res = await fetch('/api/pvp/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }
@@ -3234,7 +3237,7 @@
                 if (res.ok) {
                     currentRoomData = data;
                     currentPvpRoomCode = data.room_code;
-                    window.activePvpRoomCode = data.room_code; // Gán thẳng vào window để chống mất biến
+                    window.activePvpRoomCode = data.room_code;
 
                     document.getElementById('pvpMenuSection').classList.add('hidden');
                     document.getElementById('pvpWaitingSection').classList.remove('hidden');
