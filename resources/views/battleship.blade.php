@@ -2612,8 +2612,6 @@
             const coordStr = toCoordName(x, y);
             const resultToShow = shot.display_result || shot.result;
 
-            recordShotMarker('enemy', x, y);
-
             if (resultToShow === 'smoke_hidden') {
                 targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
                 targetCell.innerText = '💨';
@@ -2640,6 +2638,8 @@
                 targetCell.innerText = '•';
                 log(`Hỏa lực trượt tại [${coordStr}].`, 'text-slate-400');
             }
+
+            recordShotMarker('enemy', x, y);
 
             if (data.revealed_smoke_cells && data.revealed_smoke_cells.length > 0) {
                 setTimeout(() => {
@@ -2747,9 +2747,7 @@
 
         function handleBotShotResult(bShot) {
             const pCell = document.getElementById(`p-${bShot.x}-${bShot.y}`);
-            const bCoordStr = toCoordName(bShot.x, bShot.y);
-
-            recordShotMarker('player', bShot.x, bShot.y);
+            const bCoordStr = toCoordName(bShot.x, bShot.y); 
 
             setTimeout(() => {
                 if (bShot.result === 'hit' || bShot.result === 'sunk') {
@@ -2770,6 +2768,8 @@
                     pCell.innerText = '•';
                     log(`Đối phương bắn trượt tại [${bCoordStr}].`, 'text-slate-500');
                 }
+
+                recordShotMarker('player', bShot.x, bShot.y);
 
                 if (phase === 'playing') {
                     // MỞ KHÓA BÀN CỜ ĐỊCH ĐỂ NGƯỜI CHƠI BẮN TIẾP
@@ -3130,7 +3130,6 @@
             const resultToShow = shot.display_result || shot.result;
 
             if (isMeShooting) {
-                recordShotMarker('enemy', shot.x, shot.y);
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
@@ -3156,8 +3155,8 @@
                         log(`[PVP] Bạn bắn trượt tại [${coordStr}]. Chuyển lượt đối thủ!`, 'text-slate-400');
                     }
                 }
+                recordShotMarker('enemy', shot.x, shot.y);
             } else {
-                recordShotMarker('player', shot.x, shot.y);
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
                     if (shot.result === 'shield_blocked') {
@@ -3178,6 +3177,7 @@
                         log(`[PVP] Đối phương bắn trượt tại [${coordStr}]!`, 'text-slate-500');
                     }
                 }
+                recordShotMarker('player', shot.x, shot.y);
             }
 
             // XỬ LÝ SỰ KIỆN ĐẦU HÀNG / DISCONNECT TRONG PVP
