@@ -3141,13 +3141,17 @@
 
                     const room = data.room;
 
-                    // 1. Phía máy 1 (chủ phòng): Khi có player2 vào phòng thì lập tức đóng popup chờ
-                    if (myPvpRole === 'player1' && room.player2_id && !hasHandledPlayerJoined) {
+                    // KIỂM TRA TRỰC QUAN GIAO DIỆN: Nếu modal chờ đang hiển thị và server đã có người thứ 2
+                    const pvpModal = document.getElementById('pvpModal');
+                    const waitingSection = document.getElementById('pvpWaitingSection');
+                    const isWaitingOpen = pvpModal && !pvpModal.classList.contains('hidden') && waitingSection && !waitingSection.classList.contains('hidden');
+
+                    if (room.player2_id && (isWaitingOpen || !hasHandledPlayerJoined)) {
                         hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
 
-                    // 2. Khi cả 2 người đã bấm "Vào Trận" (sẵn sàng) -> bật popup Oẳn Tù Tì
+                    // Khi cả 2 người đã bấm "Vào Trận" -> bật popup Oẳn Tù Tì
                     if (room.status === 'rps_pending') {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && rpsModal.classList.contains('hidden')) {
@@ -3155,14 +3159,14 @@
                         }
                     }
 
-                    // 3. Khi lượt Oẳn Tù Tì kết thúc -> vào trận bắn
+                    // Khi lượt Oẳn Tù Tì kết thúc -> vào trận bắn
                     if (room.status === 'playing' && phase === 'setup') {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal) rpsModal.classList.add('hidden');
                         realStartPvpBattle(room.current_turn);
                     }
 
-                    // 4. Đồng bộ các phát bắn mới nhất
+                    // Đồng bộ các phát bắn mới nhất
                     const totalShots = (room.p1_shots ? room.p1_shots.length : 0) + (room.p2_shots ? room.p2_shots.length : 0);
                     if (totalShots > lastSyncedShotCount && phase === 'playing') {
                         lastSyncedShotCount = totalShots;
@@ -3188,7 +3192,7 @@
                         }
                     }
 
-                    // 5. Đồng bộ khi có kết quả thắng thua
+                    // Đồng bộ khi có kết quả thắng thua
                     if (room.status === 'finished' && phase === 'playing') {
                         handlePvpShotResult({
                             status: 'finished',
