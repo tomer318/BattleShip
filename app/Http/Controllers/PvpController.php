@@ -796,15 +796,11 @@ class PvpController extends Controller
                 }
             }
 
-            // Reset lựa chọn để nếu hòa có thể chọn tiếp
+            // Reset lựa chọn và LƯU KẾT QUẢ VÀO ACTIVE_SKILLS ĐỂ POLLING NHẬN DIỆN ĐƯỢC
             $p1Skills = is_array($room->p1_active_skills) ? $room->p1_active_skills : [];
             $p2Skills = is_array($room->p2_active_skills) ? $room->p2_active_skills : [];
             $p1Skills['rps_choice'] = null;
             $p2Skills['rps_choice'] = null;
-            
-            $room->p1_active_skills = $p1Skills;
-            $room->p2_active_skills = $p2Skills;
-            $room->save();
 
             $rpsPayload = [
                 'type'        => 'result',
@@ -812,9 +808,19 @@ class PvpController extends Controller
                 'p2_choice'   => $c2,
                 'outcome'     => $outcome,
                 'winner_role' => $winnerRole,
+                'timestamp'   => microtime(true), // Đánh dấu thời gian tránh xử lý trùng
             ];
 
-            event(new \App\Events\PvpRpsEvent($room, $rpsPayload));
+            $p1Skills['last_rps_result'] = $rpsPayload;
+            $p2Skills['last_rps_result'] = $rpsPayload;
+            
+            $room->p1_active_skills = $p1Skills;
+            $room->p2_active_skills = $p2Skills;
+            $room->save();
+
+            try {
+                event(new \App\Events\PvpRpsEvent($room, $rpsPayload));
+            } catch (\Exception $e) {}
 
             return response()->json(['status' => 'both_picked', 'data' => $rpsPayload]);
         }
@@ -878,6 +884,8 @@ class PvpController extends Controller
         $user = Auth::user();
         $myRole = ($user && $room->player1_id === $user->id) ? 'player1' : 'player2';
 
+        $p1Skills = is_array($room->p1_active_skills) ? $room->p1_active_skills : [];
+
         return response()->json([
             'status'       => 'success',
             'room'         => $room,
@@ -885,7 +893,8 @@ class PvpController extends Controller
             'current_turn' => $room->current_turn,
             'game_status'  => $room->status,
             'winner'       => $room->winner,
-            'player2_id'   => $room->player2_id, // Đảm bảo trả về ID người chơi 2 để phía client bắt chính xác
+            'player2_id'   => $room->player2_id,
+            'rps_result'   => $p1Skills['last_rps_result'] ?? null, // Gửi kết quả Oẳn tù tì về client
             'p1_shots'     => $room->p1_shots ?? [],
             'p2_shots'     => $room->p2_shots ?? [],
             'p1_ready'     => (bool) $room->p1_ready,
