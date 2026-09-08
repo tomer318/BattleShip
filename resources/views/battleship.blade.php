@@ -3717,18 +3717,24 @@
             }
         }
 
-        function decideTurnOrder(choice) {
+        async function decideTurnOrder(choice) {
             playSFX('victory');
             closeModal('rpsModal');
 
             // NẾU LÀ TRẬN PVP ONLINE
             if (gameMode === 'pvp') {
-                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
-                fetch('/api/pvp/rps-decide', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                    body: JSON.stringify({ room_code: roomCode, choice: choice })
-                });
+                const roomCode = window.activePvpRoomCode || currentPvpRoomCode || currentRoomData?.room_code;
+                try {
+                    const res = await fetch('/api/pvp/rps-decide', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ room_code: roomCode, choice: choice })
+                    });
+                    const data = await res.json();
+                    if (data.starter) {
+                        realStartPvpBattle(data.starter);
+                    }
+                } catch(e) {}
                 return;
             }
 
@@ -3740,8 +3746,11 @@
             if (!data) return;
 
             if (data.type === 'result') {
+                // Xác định rõ lựa chọn của ta và của địch
                 const myChoice = (myPvpRole === 'player1') ? data.p1_choice : data.p2_choice;
                 const enemyChoice = (myPvpRole === 'player1') ? data.p2_choice : data.p1_choice;
+
+                if (!myChoice || !enemyChoice) return;
 
                 document.getElementById('rpsMyChoiceEmoji').innerText = RPS_EMOJIS[myChoice];
                 document.getElementById('rpsMyChoiceText').innerText = RPS_NAMES[myChoice];
@@ -3751,25 +3760,35 @@
                 document.getElementById('rpsSelectionPhase').classList.add('hidden');
                 document.getElementById('rpsVersusPhase').classList.remove('hidden');
 
-                if (data.outcome === 'tie') {
+                // Trường hợp hòa
+                if (myChoice === enemyChoice || data.outcome === 'tie') {
                     playSFX('miss');
                     document.getElementById('rpsInstruction').innerText = 'HAI BÊN HÒA NHAU! HÃY RA QUÂN LẠI!';
                     document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
                     setTimeout(() => {
                         document.getElementById('rpsSelectionPhase').classList.remove('hidden');
                         document.getElementById('rpsVersusPhase').classList.add('hidden');
+                        document.getElementById('rpsInstruction').innerText = 'Hãy ra quân (Kéo - Búa - Bao) để phân định quyền ưu tiên tác chiến!';
+                        document.getElementById('rpsInstruction').className = 'text-xs text-slate-400 mt-1';
                     }, 1500);
                     return;
                 }
 
-                const iAmWinner = (data.winner_role === myPvpRole);
-                if (iAmWinner) {
+                // TỰ TÍNH TOÁN NGAY TẠI MÁY ĐỂ CHẮC CHẮN 100% CÓ 1 BÊN THẤY NÚT CHỌN
+                const winRules = { rock: 'scissors', scissors: 'paper', paper: 'rock' };
+                const iWon = (winRules[myChoice] === enemyChoice);
+
+                if (iWon) {
                     playSFX('victory');
                     document.getElementById('rpsTurnChoicePhase').classList.remove('hidden');
+                    document.getElementById('rpsEnemyTurnChoicePhase').classList.add('hidden');
+                    log("[TRANH ĐOẠT] Bạn đã CHIẾN THẮNG Kéo Búa Bao! Hãy chọn lượt khai hỏa!", "text-emerald-400 font-bold");
                 } else {
                     playSFX('alarm');
+                    document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
                     document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
                     document.getElementById('rpsEnemyDecisionText').innerText = "Đối phương chiến thắng tranh đoạt! Đang chờ đối thủ quyết định lượt đi...";
+                    log("[TRANH ĐOẠT] Đối thủ chiến thắng Kéo Búa Bao! Đang chờ đối thủ chọn lượt...", "text-rose-400 font-bold");
                 }
             }
 
