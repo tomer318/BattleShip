@@ -3225,8 +3225,9 @@
                                     shooter_role: latest.shooter,
                                     x: latest.x,
                                     y: latest.y,
-                                    result: latest.result,
-                                    ship: latest.ship,
+                                    result: latest.result,          // Đảm bảo truyền kết quả (hit/miss/sunk)
+                                    display_result: latest.result,
+                                    ship: latest.ship,              // Tên tàu bị bắn trúng/chìm
                                     next_turn: room.current_turn,
                                     status: room.status,
                                     winner: room.winner
@@ -3391,36 +3392,27 @@
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
-                    if (resultToShow === 'smoke_hidden') {
-                        targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
-                        targetCell.innerText = '💨';
-                        log(`[MÀN KHÓI] Hỏa lực tại [${coordStr}] bị khói mù che khuất! Không rõ trúng hay trượt!`, 'text-purple-400 font-bold');
-                    } else if (resultToShow === 'shield_blocked') {
-                        playSFX('shield');
-                        targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
-                        targetCell.innerText = '🛡️';
-                        log(`[KHIÊN CHẶN] Khiên năng lượng của đối thủ đã chặn đứng phát đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
-                    } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
-                        if (resultToShow === 'sunk') {
-                            playSFX('sunk');
-                            const sunkName = shot.ship || 'Chiến hạm';
-                            triggerSunkBanner(sunkName, true);
-                            markShipSunkOnHUD('enemy', sunkName);
-                        } else {
-                            playSFX('hit');
-                        }
-
+                    if (resultToShow === 'hit' || resultToShow === 'sunk') {
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
-                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${resultToShow === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
                     } else {
-                        playSFX('miss');
                         targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
                         targetCell.innerText = '•';
-                        log(`[PVP] Bạn bắn trượt tại [${coordStr}]. Chuyển lượt đối thủ!`, 'text-slate-400');
                     }
                 }
                 recordShotMarker('enemy', shot.x, shot.y);
+            } else {
+                const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
+                if (myCell) {
+                    if (shot.result === 'hit' || shot.result === 'sunk') {
+                        myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
+                        myCell.innerText = '✕';
+                    } else {
+                        myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
+                        myCell.innerText = '•';
+                    }
+                }
+                recordShotMarker('player', shot.x, shot.y);
             } else {
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
