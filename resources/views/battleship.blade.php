@@ -144,9 +144,42 @@
             filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.8));
             pointer-events: none;
         }
+        /* Animation cho Banner bắn chìm tàu */
+        @keyframes sunkBannerSlide {
+            0% { transform: translate(-50%, -60px) scale(0.85); opacity: 0; }
+            15% { transform: translate(-50%, 0) scale(1.05); opacity: 1; }
+            25% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+            80% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -40px) scale(0.9); opacity: 0; }
+        }
+
+        .sunk-banner-active {
+            animation: sunkBannerSlide 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        }
+
+        /* Kiểu dáng icon tàu trong Fleet Status HUD */
+        .fleet-ship-badge {
+            transition: all 0.3s ease;
+        }
+        .fleet-ship-sunk {
+            opacity: 0.35;
+            filter: grayscale(100%);
+            text-decoration: line-through;
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            background-color: rgba(15, 23, 42, 0.6) !important;
+        }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen p-6 antialiased selection:bg-cyan-500 selection:text-black">
+    <!-- BANNER BÁO CHÌM TÀU (SHIP SUNK BANNER) -->
+    <div id="shipSunkBanner" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-6 py-3 rounded-2xl border-2 shadow-[0_0_40px_rgba(244,63,94,0.6)] backdrop-blur-md flex items-center gap-3">
+        <span class="text-3xl" id="sunkBannerIcon">💥</span>
+        <div>
+            <div id="sunkBannerTitle" class="text-sm font-black uppercase tracking-widest text-rose-300">HẢI PHÁO TIÊU DIỆT!</div>
+            <div id="sunkBannerDesc" class="text-xs font-bold text-white font-mono-tactical">ĐÃ ĐÁNH CHÌM CHIẾN HẠM ĐỐI PHƯƠNG!</div>
+        </div>
+    </div>
+
     <div class="max-w-7xl mx-auto" id="gameAppContainer">
         <!-- Header HUD Gọn Gàng & Hiện Đại -->
         <header class="flex flex-wrap justify-between items-center mb-5 pb-3.5 border-b border-cyan-900/40 gap-3">
@@ -291,18 +324,38 @@
 
             <!-- CỘT 2: BÀN CỜ TA -->
             <div class="flex flex-col items-center">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                    <h2 class="text-base font-bold tracking-wider text-cyan-300 uppercase">Hạm Đội Của Bạn</h2>
+                <div class="flex flex-col items-center gap-1.5 mb-2 w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <h2 class="text-base font-bold tracking-wider text-cyan-300 uppercase">Hạm Đội Của Bạn</h2>
+                    </div>
+                    <!-- Mini HUD 5 tàu của Ta -->
+                    <div id="playerFleetHUD" class="flex gap-1.5 flex-wrap justify-center font-mono-tactical text-[10px]">
+                        <span id="pfleet-Carrier" class="fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold">Carrier [5]</span>
+                        <span id="pfleet-Battleship" class="fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold">Battleship [4]</span>
+                        <span id="pfleet-Cruiser" class="fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold">Cruiser [3]</span>
+                        <span id="pfleet-Submarine" class="fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold">Submarine [3]</span>
+                        <span id="pfleet-Destroyer" class="fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold">Destroyer [2]</span>
+                    </div>
                 </div>
                 <div id="playerGrid" class="grid-board bg-slate-900/80 p-2.5 rounded-xl border-2 border-cyan-900/70 shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all"></div>
             </div>
 
             <!-- CỘT 3: BÀN CỜ ĐỊCH -->
             <div class="flex flex-col items-center">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    <h2 class="text-base font-bold tracking-wider text-rose-400 uppercase">Vùng Biển Đối Phương</h2>
+                <div class="flex flex-col items-center gap-1.5 mb-2 w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <h2 class="text-base font-bold tracking-wider text-rose-400 uppercase">Vùng Biển Đối Phương</h2>
+                    </div>
+                    <!-- Mini HUD 5 tàu của Địch -->
+                    <div id="enemyFleetHUD" class="flex gap-1.5 flex-wrap justify-center font-mono-tactical text-[10px]">
+                        <span id="efleet-Carrier" class="fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold">Carrier [5]</span>
+                        <span id="efleet-Battleship" class="fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold">Battleship [4]</span>
+                        <span id="efleet-Cruiser" class="fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold">Cruiser [3]</span>
+                        <span id="efleet-Submarine" class="fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold">Submarine [3]</span>
+                        <span id="efleet-Destroyer" class="fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold">Destroyer [2]</span>
+                    </div>
                 </div>
                 <div id="botGrid" class="grid-board radar-scan bg-slate-900/80 p-2.5 rounded-xl border-2 border-rose-950/70 opacity-40 pointer-events-none transition-all shadow-[0_0_20px_rgba(244,63,94,0.08)]"></div>
             </div>
@@ -1256,6 +1309,64 @@
 
         function playSFX(name) {
             if (SoundFX[name]) SoundFX[name]();
+        }
+
+        /* --- HIỂN THỊ BANNER BẮN CHÌM TÀU RỰC LỬA --- */
+        let bannerTimeout = null;
+
+        function triggerSunkBanner(shipName, isEnemyShip = true) {
+            const banner = document.getElementById('shipSunkBanner');
+            const title = document.getElementById('sunkBannerTitle');
+            const desc = document.getElementById('sunkBannerDesc');
+            const icon = document.getElementById('sunkBannerIcon');
+
+            clearTimeout(bannerTimeout);
+            banner.classList.remove('hidden', 'sunk-banner-active');
+            void banner.offsetWidth; // Force reflow để restart animation
+
+            if (isEnemyShip) {
+                banner.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-6 py-3 rounded-2xl border-2 border-rose-500 bg-slate-950/95 shadow-[0_0_40px_rgba(244,63,94,0.7)] backdrop-blur-md flex items-center gap-3 sunk-banner-active';
+                icon.innerText = '💥';
+                title.className = 'text-sm font-black uppercase tracking-widest text-rose-400';
+                title.innerText = 'CHIẾN HẠM ĐỊCH ĐÃ BỊ ĐÁNH CHÌM!';
+                desc.innerText = `Xác nhận: Tàu [${shipName.toUpperCase()}] của đối phương đã chìm xuống đáy biển!`;
+            } else {
+                banner.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-6 py-3 rounded-2xl border-2 border-amber-500 bg-slate-950/95 shadow-[0_0_40px_rgba(245,158,11,0.7)] backdrop-blur-md flex items-center gap-3 sunk-banner-active';
+                icon.innerText = '⚠️';
+                title.className = 'text-sm font-black uppercase tracking-widest text-amber-400';
+                title.innerText = 'TÀU CỦA TA ĐÃ BỊ BẮN HẠ!';
+                desc.innerText = `Cảnh báo: Tàu [${shipName.toUpperCase()}] của hạm đội ta đã bị phá hủy!`;
+            }
+
+            bannerTimeout = setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 3200);
+        }
+
+        /* --- CẬP NHẬT TRẠNG THÁI 5 TÀU TRÊN FLEET STATUS HUD --- */
+        function markShipSunkOnHUD(target, shipName) {
+            if (!shipName) return;
+            const prefix = (target === 'enemy') ? 'efleet' : 'pfleet';
+            const badge = document.getElementById(`${prefix}-${shipName}`);
+            if (badge) {
+                badge.classList.add('fleet-ship-sunk');
+                badge.innerHTML = `☠️ ${shipName} [CHÌM]`;
+            }
+        }
+
+        function resetFleetHUD() {
+            SHIPS_DATA.forEach(s => {
+                const pBadge = document.getElementById(`pfleet-${s.name}`);
+                if (pBadge) {
+                    pBadge.className = 'fleet-ship-badge px-2 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold';
+                    pBadge.innerText = `${s.name} [${s.size}]`;
+                }
+                const eBadge = document.getElementById(`efleet-${s.name}`);
+                if (eBadge) {
+                    eBadge.className = 'fleet-ship-badge px-2 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold';
+                    eBadge.innerText = `${s.name} [${s.size}]`;
+                }
+            });
         }
 
         function startTurnTimer(isPlayerTurn = true) {
@@ -2443,6 +2554,7 @@
 
         function resetSetup() {
             clearShotMarkers();
+            resetFleetHUD();
             placedShips = [];
             selectedShipIndex = 0;
             phase = 'setup';
@@ -2617,12 +2729,18 @@
                 targetCell.innerText = '💨';
                 log(`[MÀN KHÓI] Hỏa lực bắn vào [${coordStr}] bị khói mù che khuất! Không thể xác định trúng hay trượt!`, 'text-purple-400 font-bold');
             } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
-                if (resultToShow === 'sunk') playSFX('sunk');
-                else playSFX('hit');
+                if (resultToShow === 'sunk') {
+                    playSFX('sunk');
+                    const sunkName = shot.ship || 'Chiến hạm';
+                    triggerSunkBanner(sunkName, true);
+                    markShipSunkOnHUD('enemy', sunkName);
+                } else {
+                    playSFX('hit');
+                }
 
                 targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                 targetCell.innerText = '✕';
-                log(`HỎA LỰC TRÚNG MỤC TIÊU tại [${coordStr}]! ${resultToShow === 'sunk' ? 'XÁC NHẬN TÀU ĐỐI PHƯƠNG ĐÃ CHÌM!' : ''}`, 'text-emerald-400 font-bold');
+                log(`HỎA LỰC TRÚNG MỤC TIÊU tại [${coordStr}]! ${resultToShow === 'sunk' ? `XÁC NHẬN TÀU [${shot.ship || ''}] ĐÃ CHÌM!` : ''}`, 'text-emerald-400 font-bold');
                 
                 if (data.game_status === 'playing') {
                     startTurnTimer(true);
@@ -2763,12 +2881,18 @@
 
             setTimeout(() => {
                 if (bShot.result === 'hit' || bShot.result === 'sunk') {
-                    if (bShot.result === 'sunk') playSFX('sunk');
-                    else playSFX('hit');
+                    if (bShot.result === 'sunk') {
+                        playSFX('sunk');
+                        const sunkShipName = bShot.ship || 'Chiến hạm';
+                        triggerSunkBanner(sunkShipName, false);
+                        markShipSunkOnHUD('player', sunkShipName);
+                    } else {
+                        playSFX('hit');
+                    }
 
                     pCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
                     pCell.innerText = '✕';
-                    log(`CẢNH BÁO: Tàu của ta trúng đạn tại [${bCoordStr}]!`, 'text-rose-400 font-bold');
+                    log(`CẢNH BÁO: Tàu của ta trúng đạn tại [${bCoordStr}]! ${bShot.result === 'sunk' ? `TÀU [${bShot.ship || ''}] ĐÃ BỊ ĐỐI PHƯƠNG BẮN CHÌM!` : ''}`, 'text-rose-400 font-bold');
                 } else if (bShot.result === 'player_shield_blocked') {
                     playSFX('shield');
                     pCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
@@ -3155,8 +3279,15 @@
                         targetCell.innerText = '🛡️';
                         log(`[KHIÊN CHẶN] Khiên năng lượng của đối thủ đã chặn đứng phát đạn tại [${coordStr}]!`, 'text-amber-400 font-bold');
                     } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
-                        if (resultToShow === 'sunk') playSFX('sunk');
-                        else playSFX('hit');
+                        if (resultToShow === 'sunk') {
+                            playSFX('sunk');
+                            const sunkName = shot.ship || 'Chiến hạm';
+                            triggerSunkBanner(sunkName, true);
+                            markShipSunkOnHUD('enemy', sunkName);
+                        } else {
+                            playSFX('hit');
+                        }
+
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
                         log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! ${resultToShow === 'sunk' ? 'ĐỐI THỦ BỊ CHÌM TÀU!' : 'Được bắn tiếp!'}`, 'text-emerald-400 font-bold');
@@ -3177,8 +3308,15 @@
                         myCell.innerText = '🛡️';
                         log(`[KHIÊN CỦA BẠN] Đã chặn đứng phát đạn của địch tại [${coordStr}]!`, 'text-cyan-300 font-bold');
                     } else if (shot.result === 'hit' || shot.result === 'sunk') {
-                        if (shot.result === 'sunk') playSFX('sunk');
-                        else playSFX('hit');
+                        if (shot.result === 'sunk') {
+                            playSFX('sunk');
+                            const sunkName = shot.ship || 'Chiến hạm';
+                            triggerSunkBanner(sunkName, false);
+                            markShipSunkOnHUD('player', sunkName);
+                        } else {
+                            playSFX('hit');
+                        }
+                        
                         myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
                         myCell.innerText = '✕';
                         log(`[CẢNH BÁO] Đối phương bắn TRÚNG tàu của bạn tại [${coordStr}]!`, 'text-rose-400 font-bold');
