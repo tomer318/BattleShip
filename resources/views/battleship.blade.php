@@ -3148,10 +3148,12 @@
 
         let pvpSyncInterval = null;
         let lastSyncedShotCount = 0;
+        let hasHandledPlayerJoined = false; // Cờ chặn spam lặp sự kiện vào phòng
 
         function startPvpStateSync(roomCode) {
             clearInterval(pvpSyncInterval);
             lastSyncedShotCount = 0;
+            hasHandledPlayerJoined = false;
 
             pvpSyncInterval = setInterval(async () => {
                 if (gameMode !== 'pvp' || !currentPvpRoomCode || phase === 'ended') {
@@ -3166,9 +3168,9 @@
 
                     const room = data.room;
 
-                    // 1. Khi người thứ 2 vào phòng: Tự động đóng modal chờ của người 1
-                    const waitingSection = document.getElementById('pvpWaitingSection');
-                    if (waitingSection && !waitingSection.classList.contains('hidden') && room.player2_id) {
+                    // 1. Chỉ gọi vào phòng ĐÚNG 1 LẦN DUY NHẤT khi phát hiện đối thủ
+                    if (room.player2_id && !hasHandledPlayerJoined) {
+                        hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
 
@@ -3246,23 +3248,6 @@
                     document.getElementById('displayRoomCode').innerText = data.room_code;
                     
                     subscribeToRoom(data.room_code);
-
-                    // POLLING DỰ PHÒNG: Cứ mỗi 2 giây kiểm tra xem người thứ 2 đã vào phòng chưa
-                    clearInterval(pvpPollingInterval);
-                    pvpPollingInterval = setInterval(async () => {
-                        if (!currentPvpRoomCode || phase !== 'setup') {
-                            clearInterval(pvpPollingInterval);
-                            return;
-                        }
-                        try {
-                            const checkRes = await fetch(`/api/pvp/room-status?room_code=${currentPvpRoomCode}`);
-                            const checkData = await checkRes.json();
-                            if (checkData.room && checkData.room.player2_id && document.getElementById('pvpWaitingSection').classList.contains('hidden') === false) {
-                                clearInterval(pvpPollingInterval);
-                                handlePlayerJoined({ room: checkData.room });
-                            }
-                        } catch (e) {}
-                    }, 2000);
 
                     playSFX('click');
                     log(`Đã tạo phòng PvP thành công: [${data.room_code}]. Đang đợi đối thủ tham gia...`, 'text-indigo-400 font-bold');
