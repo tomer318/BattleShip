@@ -186,13 +186,16 @@
             </div>
         </header>
 
-        <!-- Thanh công cụ dàn trận -->
-        <div id="placementControls" class="bg-slate-900/60 backdrop-blur-md p-4 rounded-xl border border-cyan-900/50 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <!-- Thanh công cụ dàn trận (Cố định 2 hàng rõ ràng) -->
+        <div id="placementControls" class="bg-slate-900/60 backdrop-blur-md p-3.5 rounded-xl border border-cyan-900/50 mb-6 flex flex-col gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+            <!-- Hàng 1: Danh sách chọn tàu -->
             <div class="flex items-center gap-3 flex-wrap">
-                <span class="text-xs uppercase tracking-widest font-semibold text-slate-400">Chọn tàu:</span>
+                <span class="text-xs uppercase tracking-widest font-semibold text-slate-400 whitespace-nowrap">Chọn tàu:</span>
                 <div id="shipButtons" class="flex gap-2 flex-wrap"></div>
             </div>
-            <div class="flex items-center gap-2.5 flex-wrap">
+
+            <!-- Hàng 2: Các nút chức năng tác chiến -->
+            <div class="flex items-center gap-2.5 pt-1 border-t border-slate-800/80">
                 <button id="btnAutoDeploy" onclick="autoDeployShips()" class="bg-amber-600/80 hover:bg-amber-500 text-amber-100 border border-amber-400/40 px-3.5 py-1.5 rounded-md text-xs uppercase tracking-wider font-bold transition shadow-[0_0_10px_rgba(245,158,11,0.25)] flex items-center gap-1.5">
                     <span>🎲</span>
                     <span>TỰ ĐỘNG XẾP</span>
@@ -1960,10 +1963,9 @@
                 const btn = document.createElement('button');
                 
                 if (isPlaced) {
-                    // Trạng thái đã đặt: Hiển thị icon thu hồi (Undo chiếc này)
-                    btn.className = 'group px-3 py-1 text-xs rounded-md font-semibold tracking-wider uppercase border transition bg-cyan-950/50 border-cyan-500/50 text-cyan-300 hover:bg-rose-950/80 hover:border-rose-500 hover:text-rose-300';
-                    btn.title = `Bấm để thu hồi và đặt lại tàu ${s.name}`;
-                    btn.innerHTML = `<span>✓ ${s.name} [${s.size}]</span> <span class="hidden group-hover:inline ml-1 font-bold text-rose-400">↺ GỠ</span>`;
+                    btn.className = 'px-3 py-1 text-xs rounded-md font-semibold tracking-wider uppercase border transition bg-cyan-950/40 border-cyan-500/50 text-cyan-300 hover:bg-rose-950 hover:border-rose-500 hover:text-rose-300';
+                    btn.title = `Tàu đã đặt. Bấm vào đây để gỡ tàu ${s.name} ra và xếp lại!`;
+                    btn.innerHTML = `✓ ${s.name} [${s.size}]`;
                     btn.onclick = () => removeSpecificShip(s.name, idx);
                 } else {
                     // Trạng thái chưa đặt
