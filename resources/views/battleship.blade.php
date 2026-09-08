@@ -3153,19 +3153,23 @@
                     if (data.my_role && data.my_role !== 'spectator') {
                         myPvpRole = data.my_role;
                     }
-                    
+
+                    // Cập nhật mở khóa bàn cờ chuẩn xác theo role từ server
                     if (phase === 'playing' && room.status === 'playing') {
-                        const isMyTurn = (room.current_turn === myPvpRole);
+                        // So sánh trực tiếp role hiện tại với turn từ server (hỗ trợ cả dạng string và object)
+                        const activeTurn = room.current_turn;
+                        const isMyTurn = (activeTurn === myPvpRole);
+                        
                         const bGrid = document.getElementById('botGrid');
                         if (bGrid) {
-                            if (isMyTurn && bGrid.classList.contains('pointer-events-none')) {
+                            if (isMyTurn) {
+                                // Mở khóa và làm sáng bàn cờ để cho phép bắn
                                 bGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
                                 bGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
-                            } else if (!isMyTurn && !bGrid.classList.contains('pointer-events-none')) {
+                            } else {
+                                // Khóa bàn cờ khi đến lượt đối thủ
                                 bGrid.classList.add('pointer-events-none', 'opacity-40');
                                 bGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
                             }
                         }
                     }
