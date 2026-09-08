@@ -3209,32 +3209,51 @@
                         }
                     }
 
-                    // 5. Đồng bộ phát bắn mới
-                    const totalShots = (room.p1_shots ? room.p1_shots.length : 0) + (room.p2_shots ? room.p2_shots.length : 0);
-                    if (totalShots > lastSyncedShotCount && phase === 'playing') {
-                        lastSyncedShotCount = totalShots;
+                    // 5. Đồng bộ và vẽ lại toàn bộ lịch sử các phát đạn của cả 2 bên lên bàn cờ
+                    const p1Shots = room.p1_shots || [];
+                    const p2Shots = room.p2_shots || [];
 
-                        const allShots = [];
-                        (room.p1_shots || []).forEach(s => allShots.push(Object.assign({ shooter: 'player1' }, s)));
-                        (room.p2_shots || []).forEach(s => allShots.push(Object.assign({ shooter: 'player2' }, s)));
+                    // Nếu mình là player1, các phát đạn của mình nằm ở p1_shots (vẽ lên botGrid), đạn đối thủ ở p2_shots (vẽ lên playerGrid)
+                    // Nếu mình là player2, đạn của mình nằm ở p2_shots (vẽ lên botGrid), đạn đối thủ ở p1_shots (vẽ lên playerGrid)
+                    const myShotsList = (myPvpRole === 'player1') ? p1Shots : p2Shots;
+                    const enemyShotsList = (myPvpRole === 'player1') ? p2Shots : p1Shots;
 
-                        if (allShots.length > 0) {
-                            const latest = allShots[allShots.length - 1];
-                            if (latest.shooter !== myPvpRole) {
-                                handlePvpShotResult({
-                                    shooter_role: latest.shooter,
-                                    x: latest.x,
-                                    y: latest.y,
-                                    result: latest.result,          // Đảm bảo truyền kết quả (hit/miss/sunk)
-                                    display_result: latest.result,
-                                    ship: latest.ship,              // Tên tàu bị bắn trúng/chìm
-                                    next_turn: room.current_turn,
-                                    status: room.status,
-                                    winner: room.winner
-                                });
+                    // Vẽ các phát đạn của mình lên bàn cờ đối phương (botGrid)
+                    myShotsList.forEach(s => {
+                        const targetCell = document.getElementById(`b-${s.x}-${s.y}`);
+                        if (targetCell && !targetCell.dataset.rendered) {
+                            targetCell.dataset.rendered = "true";
+                            targetCell.dataset.fired = "true";
+                            if (s.result === 'hit' || s.result === 'sunk') {
+                                targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)]';
+                                targetCell.innerText = '✕';
+                            } else if (s.result === 'shield_blocked') {
+                                targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
+                                targetCell.innerText = '🛡️';
+                            } else {
+                                targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
+                                targetCell.innerText = '•';
                             }
                         }
-                    }
+                    });
+
+                    // Vẽ các phát đạn của đối phương bắn mình lên bàn cờ nhà (playerGrid)
+                    enemyShotsList.forEach(s => {
+                        const myCell = document.getElementById(`p-${s.x}-${s.y}`);
+                        if (myCell && !myCell.dataset.rendered) {
+                            myCell.dataset.rendered = "true";
+                            if (s.result === 'hit' || s.result === 'sunk') {
+                                myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)]';
+                                myCell.innerText = '✕';
+                            } else if (s.result === 'shield_blocked') {
+                                myCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
+                                myCell.innerText = '🛡️';
+                            } else {
+                                myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
+                                myCell.innerText = '•';
+                            }
+                        }
+                    });
 
                     // 6. Đồng bộ kết thúc trận
                     if (room.status === 'finished' && phase === 'playing') {
@@ -3489,7 +3508,7 @@
             }
             startTurnTimer(isMyTurnNow);
         }
-        
+
         function handlePvpSkillEffect(effect) {
             if (!effect) return;
             const isMe = (effect.user_role === myPvpRole);
