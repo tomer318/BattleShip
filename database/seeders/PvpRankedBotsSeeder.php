@@ -11,7 +11,12 @@ class PvpRankedBotsSeeder extends Seeder
 {
     public function run(): void
     {
-        // Xóa bot cũ nếu có trước khi tạo mới
+        // Nếu đã có bot trong DB rồi thì bỏ qua, không xóa đi tạo lại để tránh xáo trộn dữ liệu
+        if (User::where('is_bot', true)->count() >= 50) {
+            return;
+        }
+
+        // Xóa bot cũ nếu có trước khi tạo mới (chỉ khi số lượng chưa đủ)
         User::where('is_bot', true)->delete();
 
         $namesPool = [
@@ -46,12 +51,11 @@ class PvpRankedBotsSeeder extends Seeder
             'Arcturus_Heavy', 'Procyon_Light', 'Achernar_Fast', 'Hadar_Stealth',
         ];
 
-        // 6 bậc rank và tỉ lệ phân bố bot
         $ranksConfig = [
             'seaman' => [
                 'count' => 25,
                 'min_elo' => 200, 'max_elo' => 999,
-                'diff_weights' => ['easy' => 70, 'medium' => 25, 'hard' => 4, 'nightmare' => 1], // 1% Smurf
+                'diff_weights' => ['easy' => 70, 'medium' => 25, 'hard' => 4, 'nightmare' => 1],
                 'acc_min' => 20, 'acc_max' => 38,
             ],
             'petty_officer' => [
@@ -93,7 +97,6 @@ class PvpRankedBotsSeeder extends Seeder
             for ($i = 0; $i < $cfg['count']; $i++) {
                 $botName = $namesPool[$nameIndex++] ?? ('Commander_Bot_' . rand(100, 9999));
 
-                // Chọn độ khó theo tỉ lệ
                 $randRoll = rand(1, 100);
                 $cum = 0;
                 $botDiff = 'medium';
@@ -108,13 +111,12 @@ class PvpRankedBotsSeeder extends Seeder
                 $elo = rand($cfg['min_elo'], $cfg['max_elo']);
                 $accuracy = round(rand($cfg['acc_min'] * 10, $cfg['acc_max'] * 10) / 10, 1);
                 
-                // Nếu là Smurf (bot nightmare/hard ở rank thấp), buff accuracy lên
                 if (in_array($tier, ['seaman', 'petty_officer']) && in_array($botDiff, ['hard', 'nightmare'])) {
                     $accuracy = round(rand(680, 850) / 10, 1);
                 }
 
                 $totalMatches = rand(20, 180);
-                $winRate = ($elo / 4000) * 0.45 + 0.35; // Dao động 45% - 75%
+                $winRate = ($elo / 4000) * 0.45 + 0.35;
                 $wins = (int) round($totalMatches * $winRate);
                 $losses = max(1, $totalMatches - $wins);
 
