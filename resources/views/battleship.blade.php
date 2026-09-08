@@ -3123,12 +3123,14 @@
         let lastSyncedShotCount = 0;
         let hasHandledPlayerJoined = false;
         let lastRpsTimestamp = 0;
+        let isRpsFinished = false; // <-- CỜ KHÓA VĨNH VIỄN MODAL RPS
 
         function startPvpStateSync(roomCode) {
             clearInterval(pvpSyncInterval);
             lastSyncedShotCount = 0;
             hasHandledPlayerJoined = false;
             lastRpsTimestamp = 0;
+            isRpsFinished = false;
             gameMode = 'pvp';
 
             pvpSyncInterval = setInterval(async () => {
@@ -3144,11 +3146,11 @@
                     const data = await res.json();
                     if (!res.ok || !data.room) return;
 
-                    if (data.my_role && data.my_role !== 'spectator') {
-                        myPvpRole = data.my_role; // Đồng bộ role chuẩn từ server
-                    }
-
                     const room = data.room;
+
+                    if (data.my_role && data.my_role !== 'spectator') {
+                        myPvpRole = data.my_role;
+                    }
 
                     // 1. Đóng modal chờ khi người 2 vào phòng
                     const pvpModal = document.getElementById('pvpModal');
@@ -3158,28 +3160,37 @@
                         handlePlayerJoined({ room });
                     }
 
-                    // 2. Khi cả 2 người đã bấm "Vào Trận" -> bật modal Oẳn Tù Tì
-                    if (room.status === 'rps_pending') {
+                    // 2. Khi cả 2 người đã bấm "Vào Trận" -> bật modal Oẳn Tù Tì (CHỈ MỞ KHI CHƯA XONG RPS)
+                    if (room.status === 'rps_pending' && !isRpsFinished) {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && rpsModal.classList.contains('hidden')) {
                             onBothPlayersReady(room);
                         }
                     }
 
-                    // 3. ĐỒNG BỘ KẾT QUẢ OẲN TÙ TÌ (RPS) REALTIME
-                    if (data.rps_result && data.rps_result.timestamp !== lastRpsTimestamp) {
+                    // 3. Đồng bộ kết quả Oẳn Tù Tì
+                    if (!isRpsFinished && data.rps_result && data.rps_result.timestamp !== lastRpsTimestamp) {
                         lastRpsTimestamp = data.rps_result.timestamp;
                         handlePvpRpsEvent(data.rps_result);
                     }
 
-                    // 4. Khi người thắng Oẳn Tù Tì đã chọn lượt đi (status chuyển sang 'playing') -> vào bắn
-                    if (room.status === 'playing' && phase === 'setup') {
+                    // 4. KHI TRẬN ĐẤU ĐÃ BẮT ĐẦU (room.status === 'playing'):
+                    // KHÓA VÀ ĐÓNG TRIỆT ĐỂ MODAL RPS Ở CẢ 2 MÁY
+                    if (room.status === 'playing') {
+                        isRpsFinished = true; // Khóa vĩnh viễn không cho mở lại RPS
+                        
                         const rpsModal = document.getElementById('rpsModal');
-                        if (rpsModal) rpsModal.classList.add('hidden');
-                        realStartPvpBattle(room.current_turn);
+                        if (rpsModal && !rpsModal.classList.contains('hidden')) {
+                            rpsModal.classList.add('hidden');
+                        }
+
+                        // Nếu máy này vẫn chưa chuyển sang phase playing thì đưa vào trận ngay
+                        if (phase !== 'playing') {
+                            realStartPvpBattle(room.current_turn);
+                        }
                     }
 
-                    // 5. Đồng bộ phát bắn
+                    // 5. Đồng bộ phát bắn mới
                     const totalShots = (room.p1_shots ? room.p1_shots.length : 0) + (room.p2_shots ? room.p2_shots.length : 0);
                     if (totalShots > lastSyncedShotCount && phase === 'playing') {
                         lastSyncedShotCount = totalShots;
@@ -3725,6 +3736,7 @@
         }
 
         async function decideTurnOrder(choice) {
+            isRpsFinished = true;
             playSFX('victory');
             closeModal('rpsModal');
 
