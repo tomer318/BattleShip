@@ -336,6 +336,7 @@ class GameController extends Controller
                 'player_shot'           => $playerShotResponse,
                 'revealed_smoke_cells'  => $revealedSmokeCells, 
                 'game_status'           => 'won',
+                'bot_ships'             => $game->bot_ships,
                 'stats'                 => $stats,
                 'earned_credits'        => $earnedCredits,
                 'earned_gems'           => $earnedGems,

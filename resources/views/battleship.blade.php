@@ -2678,6 +2678,18 @@
                 document.getElementById('turnTimerContainer').classList.add('hidden');
                 playSFX('victory');
 
+                if (data.bot_ships) {
+                    data.bot_ships.forEach(ship => {
+                        ship.coordinates.forEach(c => {
+                            const cell = document.getElementById(`b-${c.x}-${c.y}`);
+                            if (cell) {
+                                cell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)]';
+                                cell.innerText = '✕';
+                            }
+                        });
+                    });
+                }
+
                 // NẾU LÀ TRẬN ĐẤU RANK: CẬP NHẬT ELO VÀ KIỂM TRA TOP 5
                 if (isRankMatch && currentRankOpponent) {
                     const gainedElo = Math.floor(Math.random() * 12) + 18; // +18 đến +30 Elo
