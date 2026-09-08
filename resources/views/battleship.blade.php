@@ -101,6 +101,48 @@
             scrollbar-width: thin;
             scrollbar-color: #0e7490 #090d16;
         }
+        /* Hiệu ứng ô phát bắn mới nhất (Last Shot Reticle) */
+        @keyframes pulseTargetRing {
+            0% {
+                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 0 0 rgba(244, 63, 94, 0.9);
+                transform: scale(0.96);
+            }
+            50% {
+                box-shadow: inset 0 0 0 3px #fb7185, 0 0 14px 4px rgba(244, 63, 94, 0.7);
+                transform: scale(1.04);
+            }
+            100% {
+                box-shadow: inset 0 0 0 2px #f43f5e, 0 0 0 0 rgba(244, 63, 94, 0);
+                transform: scale(0.96);
+            }
+        }
+
+        .last-shot-active {
+            position: relative;
+            z-index: 20;
+            animation: pulseTargetRing 1.4s infinite ease-in-out !important;
+        }
+
+        .last-shot-active::after {
+            content: '🎯';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 13px;
+            filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.8));
+            animation: bounce 1s infinite alternate;
+            pointer-events: none;
+        }
+
+        /* Các ô đã bắn trúng / hụt trước đó */
+        .cell-hit-logged {
+            position: relative;
+            border-color: rgba(239, 68, 68, 0.8) !important;
+        }
+        .cell-miss-logged {
+            position: relative;
+            border-color: rgba(148, 163, 184, 0.4) !important;
+        }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen p-6 antialiased selection:bg-cyan-500 selection:text-black">
@@ -147,6 +189,10 @@
                 <button onclick="openShopModal()" class="h-9 px-3 rounded-lg border border-amber-500/40 bg-slate-900/90 hover:bg-amber-500/10 text-amber-300 font-bold uppercase tracking-wider transition flex items-center gap-1.5">
                     <span>📦</span>
                     <span>QUÂN NHU</span>
+                </button>
+
+                <button onclick="openGuideModal()" class="h-9 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-3.5 rounded-lg font-bold tracking-wider uppercase transition flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                    <span class="text-base">📖</span> HƯỚNG DẪN
                 </button>
 
                 <button id="sfxToggleBtn" onclick="toggleSFX()" class="h-9 px-2.5 rounded-lg border border-cyan-500/40 bg-slate-900/90 hover:bg-cyan-500/10 text-cyan-300 font-bold uppercase tracking-wider transition flex items-center gap-1" title="Bật/Tắt Âm Thanh">
@@ -753,6 +799,139 @@
         </div>
     </div>
 
+    <!-- MODAL HƯỚNG DẪN & CẨM NANG QUÂN SỰ TỐI CAO -->
+    <div id="guideModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-cyan-500/60 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(6,182,212,0.25)] overflow-hidden">
+            <!-- Tiêu đề Header -->
+            <div class="px-6 py-4 bg-slate-950/90 border-b border-cyan-500/40 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">📜</span>
+                    <div>
+                        <h2 class="text-xl font-black text-cyan-400 uppercase tracking-wider">CẨM NANG CHỈ HUY QUÂN SỰ</h2>
+                        <p class="text-sm text-slate-400">Luật hải chiến, cơ chế kinh tế, vũ khí công nghệ và hệ thống đấu trường</p>
+                    </div>
+                </div>
+                <button onclick="closeGuideModal()" class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-rose-400 border border-slate-700 font-bold transition text-lg font-mono-tactical">✕</button>
+            </div>
+
+            <!-- Nội dung cẩm nang (Cuộn mượt, cỡ chữ to 15px - 16px) -->
+            <div class="p-6 overflow-y-auto space-y-6 text-slate-200 text-[15px] leading-relaxed">
+                
+                <!-- Mục 1: Bố trí lực lượng & Luật Khai Hỏa -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-cyan-300 flex items-center gap-2 mb-3">
+                        <span>⚓</span> 1. QUY TẮC DÀN TRẬN & VÒNG KHAI HỎA
+                    </h3>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300">
+                        <li><strong class="text-white">Hạm đội tác chiến:</strong> Mỗi chỉ huy sở hữu 5 chiến hạm tiêu chuẩn: <em>Carrier (5 ô)</em>, <em>Battleship (4 ô)</em>, <em>Cruiser (3 ô)</em>, <em>Submarine (3 ô)</em>, và <em>Destroyer (2 ô)</em>.</li>
+                        <li><strong class="text-white">Dàn trận tự do:</strong> Bạn có thể dùng nút <span class="text-amber-400 font-bold">🎲 TỰ ĐỘNG XẾP</span> để roll ngẫu nhiên, hoặc bấm trực tiếp vào tên tàu đã đặt để <span class="text-rose-400 font-bold">thu hồi (Undo)</span> từng chiếc đặt lại.</li>
+                        <li><strong class="text-white">Quy tắc bắn:</strong> Đấu theo lượt (Turn-based 15s). Nếu bắn <span class="text-emerald-400 font-bold">TRÚNG</span> tàu địch, bạn sẽ được <strong class="text-white">bắn tiếp thêm lượt nữa</strong>. Nếu bắn <span class="text-rose-400 font-bold">TRƯỢT</span>, quyền bắn chuyển sang đối phương.</li>
+                        <li><strong class="text-white">Dấu vết hỏa lực:</strong> Ô phát bắn mới nhất sẽ luôn có biểu tượng <span class="text-rose-400 font-bold">🎯 vòng tròn đỏ phát sáng</span> để nhận diện ngay tọa độ vừa nã đạn.</li>
+                    </ul>
+                </section>
+
+                <!-- Mục 2: Tiền Vàng, Kim Cương & Điểm Quân Công -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-amber-300 flex items-center gap-2 mb-3">
+                        <span>💎</span> 2. HỆ THỐNG KINH TẾ (TIỀN $ & GEMS)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900/80 p-4 rounded-lg border border-amber-500/20">
+                            <h4 class="font-bold text-amber-400 mb-1.5 flex items-center gap-1.5 text-base">💰 Ngân Sách Tác Chiến ($)</h4>
+                            <p class="text-sm text-slate-300 mb-2">Thưởng qua mỗi phát bắn trúng (+15$), bắn chìm tàu (+100$), thắng Bot (+150$ - 400$) và thắng trận Đấu Rank (+300$).</p>
+                            <p class="text-xs text-amber-200/80">Dùng để mua các kỹ năng tác chiến trong Kho Quân Nhu Hàng Ngày.</p>
+                        </div>
+                        <div class="bg-slate-900/80 p-4 rounded-lg border border-purple-500/20">
+                            <h4 class="font-bold text-purple-400 mb-1.5 flex items-center gap-1.5 text-base">💎 Kim Cương Quý (Gems)</h4>
+                            <p class="text-sm text-slate-300 mb-2">Phần thưởng quân công danh giá nhận được khi mở khóa <strong class="text-white">Thành Tựu Hải Quân</strong> (từ 2 đến 100 Gems/thành tựu) hoặc thăng quân hàm Rank.</p>
+                            <p class="text-xs text-purple-200/80">Dùng để mua trang bị Chợ Đen không giới hạn số lượng và làm mới shop khẩn cấp.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mục 3: Kho Quân Nhu & Chi Tiết 9 Trang Bị Tác Chiến -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2 mb-3">
+                        <span>🎒</span> 3. KHO QUÂN NHU: 9 TRANG BỊ TÁC CHIẾN TỐI TÂN
+                    </h3>
+                    <p class="text-slate-300 text-sm mb-3">Mỗi trang bị ở tab Hàng Ngày bị giới hạn số lượng mua trong ngày (1 - 5 chiếc/ngày). Sử dụng kỹ năng trong trận sẽ tiêu tốn 1 lượt hành động:</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
+                            <div class="font-bold text-cyan-400 text-sm mb-1">🛰️ Vệ Tinh Quét Vị Trí</div>
+                            <p class="text-xs text-slate-300">Lộ chính xác 1 ô có tàu địch còn sống và tên loại tàu (Giới hạn: 1/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
+                            <div class="font-bold text-cyan-400 text-sm mb-1">📡 Radar Vùng 3x3</div>
+                            <p class="text-xs text-slate-300">Quét khu vực 3x3: Báo tổng số ô chứa thân tàu đang ẩn nấp mà không nổ tàu (Giới hạn: 3/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
+                            <div class="font-bold text-cyan-400 text-sm mb-1">🔊 Sonar Cảm Biến 5x5</div>
+                            <p class="text-xs text-slate-300">Báo khoảng cách: Rất gần, Gần, Xa, Rất xa trong bán kính 5x5 (Giới hạn: 5/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
+                            <div class="font-bold text-rose-400 text-sm mb-1">🚀 Tên Lửa Dẫn Đường</div>
+                            <p class="text-xs text-slate-300">Tự động khóa mục tiêu và bắn trúng ngay 1 ô tàu nguyên vẹn của đối phương (Giới hạn: 1/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
+                            <div class="font-bold text-rose-400 text-sm mb-1">✈️ Không Kích Phá Rối</div>
+                            <p class="text-xs text-slate-300">Yêu cầu Carrier còn sống: Tước quyền phản công 1 lượt của đối phương (Giới hạn: 2/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
+                            <div class="font-bold text-rose-400 text-sm mb-1">💨 Màn Khói Nhiễu Loạn</div>
+                            <p class="text-xs text-slate-300">Ẩn kết quả trúng/trượt trong 5 phát đạn tiếp theo của đối phương (Giới hạn: 4/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
+                            <div class="font-bold text-emerald-400 text-sm mb-1">🛡️ Khiên Năng Lượng</div>
+                            <p class="text-xs text-slate-300">Tạo lá chắn từ trường: Vô hiệu hóa 3 phát đạn trúng tiếp theo của đối phương (Giới hạn: 1/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
+                            <div class="font-bold text-emerald-400 text-sm mb-1">🔧 Tái Cấu Trúc Khẩn Cấp</div>
+                            <p class="text-xs text-slate-300">Phục hồi 100% thân tàu bị tổn thương và di chuyển sang tọa độ an toàn mới (Giới hạn: 2/ngày).</p>
+                        </div>
+                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
+                            <div class="font-bold text-emerald-400 text-sm mb-1">⚓ Cơ Động Chiến Thuật</div>
+                            <p class="text-xs text-slate-300">Điều động 1 tàu nguyên vẹn đến vị trí hải đồ mới chưa bị lộ diện (Giới hạn: 3/ngày).</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mục 4: Độ khó của Bot AI -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-emerald-300 flex items-center gap-2 mb-3">
+                        <span>🤖</span> 4. CƠ CHẾ BOT AI & CÁC CẤP ĐỘ KHÓ
+                    </h3>
+                    <ul class="space-y-2.5 text-slate-300 text-sm">
+                        <li><strong class="text-emerald-400 text-base">Dễ (Easy):</strong> Bắn ngẫu nhiên hoàn toàn, không có chiến thuật săn lùng và không bao giờ dùng trang bị kỹ năng.</li>
+                        <li><strong class="text-cyan-400 text-base">Trung Bình (Medium):</strong> Khi bắn trúng 1 phát, Bot chuyển sang chế độ <span class="text-white font-semibold">Target Hunting</span> để bắn các ô liền kề. Có thể trang bị 1-2 món trinh sát cơ bản.</li>
+                        <li><strong class="text-amber-400 text-base">Khó (Hard):</strong> Thuật toán Parity Search kết hợp săn lùng thông minh. Sử dụng <span class="text-cyan-300 font-bold">Radar</span>, <span class="text-blue-300 font-bold">Khiên Năng Lượng</span> và có thể dùng <span class="text-rose-400 font-bold">Không Kích</span>.</li>
+                        <li><strong class="text-rose-400 text-base">Cực Khó (AI Nguyên Tử / Nightmare):</strong> Bản đồ nhiệt xác suất (Probability Heatmap). Biết tự động bật <span class="text-emerald-400 font-bold">Khiên Chắn</span> khi nguy cấp, thả <span class="text-purple-400 font-bold">Màn Khói</span> che giấu tàu và phóng <span class="text-rose-400 font-bold">Tên Lửa Dẫn Đường</span> tiêu diệt bạn!</li>
+                    </ul>
+                </section>
+
+                <!-- Mục 5: Đấu Trường Rank & Ghép Trận PvP -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-lg font-bold text-yellow-300 flex items-center gap-2 mb-3">
+                        <span>⚔️</span> 5. ĐẤU MẠNG & ĐẤU RANK TRỰC TUYẾN
+                    </h3>
+                    <div class="space-y-2.5 text-slate-300 text-sm">
+                        <p><strong class="text-white">Bắt đầu trận chiến:</strong> Cả hai cơ trưởng bước vào minigame <span class="text-amber-400 font-bold">Oẳn Tù Tì (Kéo - Búa - Bao)</span>. Người chiến thắng tuyệt đối có toàn quyền chọn <span class="text-cyan-300 font-bold">Đi Trước (Bắn trước)</span> hoặc <span class="text-slate-300 font-bold">Đi Sau</span>.</p>
+                        <p><strong class="text-white">Bậc Quân Hàm:</strong> Chia làm 6 bậc: <em>Thủy Thủ (200 - 999 Elo)</em> $\rightarrow$ <em>Hạ Sĩ Quan (1000+)</em> $\rightarrow$ <em>Sĩ Quan (1500+)</em> $\rightarrow$ <em>Thiếu Tá (2000+)</em> $\rightarrow$ <em>Đại Tá (2500+)</em> $\rightarrow$ <em>Đô Đốc (3000+ Elo)</em>.</p>
+                        <p><strong class="text-white">Hàng chờ thông minh:</strong> Khi bấm <span class="text-amber-400 font-semibold">TÌM TRẬN ĐẤU RANK</span>, hệ thống ưu tiên tìm người chơi thực trong 25 giây. Nếu quá 25 giây chưa có người tương xứng, hệ thống tự động ghép với <span class="text-emerald-300 font-bold">Bot Hải Quân có bậc Elo tương đương</span> để bạn vào trận ngay lập tức mà không phải chờ đợi lâu!</p>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Footer nút đóng -->
+            <div class="px-6 py-3.5 bg-slate-950/90 border-t border-slate-800 text-right">
+                <button onclick="closeGuideModal()" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-lg text-sm uppercase tracking-wider transition shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                    ĐÃ HIỂU CHIẾN THUẬT
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         let currentUser = null;
@@ -812,6 +991,41 @@
 
         let sfxEnabled = true;
         let audioCtx = null;
+
+        let lastShotCoord = null;
+
+        function markLastShot(boardPrefix, x, y) {
+            // Xóa tâm ngắm ở ô bắn trước đó
+            if (lastShotCoord) {
+                const prevCell = document.getElementById(`${lastShotCoord.prefix}-${lastShotCoord.x}-${lastShotCoord.y}`);
+                if (prevCell) {
+                    prevCell.classList.remove('last-shot-active');
+                }
+            }
+
+            // Gán tâm ngắm phát sáng và radar nhấp nháy cho ô vừa bắn
+            lastShotCoord = { prefix: boardPrefix, x, y };
+            const currCell = document.getElementById(`${boardPrefix}-${x}-${y}`);
+            if (currCell) {
+                currCell.classList.add('last-shot-active');
+            }
+        }
+
+        function openGuideModal() {
+            const m = document.getElementById('guideModal');
+            if (m) {
+                m.classList.remove('hidden');
+                playSFX('click');
+            }
+        }
+
+        function closeGuideModal() {
+            const m = document.getElementById('guideModal');
+            if (m) {
+                m.classList.add('hidden');
+                playSFX('click');
+            }
+        }
 
         function getAudioContext() {
             if (!audioCtx) {
@@ -2199,6 +2413,11 @@
         }
 
         function resetSetup() {
+            if (lastShotCoord) {
+                const prevCell = document.getElementById(`${lastShotCoord.prefix}-${lastShotCoord.x}-${lastShotCoord.y}`);
+                if (prevCell) prevCell.classList.remove('last-shot-active');
+                lastShotCoord = null;
+            }
             placedShips = [];
             selectedShipIndex = 0;
             phase = 'setup';
@@ -2368,6 +2587,8 @@
             const coordStr = toCoordName(x, y);
             const resultToShow = shot.display_result || shot.result;
 
+            markLastShot('b', x, y);
+
             if (resultToShow === 'smoke_hidden') {
                 targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
                 targetCell.innerText = '💨';
@@ -2502,6 +2723,8 @@
         function handleBotShotResult(bShot) {
             const pCell = document.getElementById(`p-${bShot.x}-${bShot.y}`);
             const bCoordStr = toCoordName(bShot.x, bShot.y);
+
+            markLastShot('p', bShot.x, bShot.y);
 
             setTimeout(() => {
                 if (bShot.result === 'hit' || bShot.result === 'sunk') {
@@ -2882,6 +3105,7 @@
             const resultToShow = shot.display_result || shot.result;
 
             if (isMeShooting) {
+                markLastShot('b', shot.x, shot.y);
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
@@ -2908,6 +3132,7 @@
                     }
                 }
             } else {
+                markLastShot('p', shot.x, shot.y);
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
                     if (shot.result === 'shield_blocked') {
