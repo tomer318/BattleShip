@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Kích hoạt nạp toàn bộ dàn Bot PvP và Rank
         $this->call([
+            AchievementSeeder::class,
             PvpRankedBotsSeeder::class,
         ]);
     }
