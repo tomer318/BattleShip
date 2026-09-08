@@ -159,14 +159,19 @@
 
         /* Kiểu dáng icon tàu trong Fleet Status HUD */
         .fleet-ship-badge {
-            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            transition: all 0.25s ease-in-out;
         }
+
+        /* Khi tàu bị chìm: chỉ đổi sang màu xám mờ và gạch ngang, giữ nguyên 100% kích thước */
         .fleet-ship-sunk {
-            opacity: 0.35;
-            filter: grayscale(100%);
-            text-decoration: line-through;
-            border-color: rgba(239, 68, 68, 0.4) !important;
-            background-color: rgba(15, 23, 42, 0.6) !important;
+            opacity: 0.35 !important;
+            text-decoration: line-through !important;
+            color: #94a3b8 !important;
+            border-color: #334155 !important;
+            background-color: rgba(15, 23, 42, 0.7) !important;
+            box-shadow: none !important;
         }
     </style>
 </head>
@@ -330,12 +335,12 @@
                         <h2 class="text-base font-bold tracking-wider text-cyan-300 uppercase">Hạm Đội Của Bạn</h2>
                     </div>
                     <!-- Mini HUD 5 tàu của Ta -->
-                    <div id="playerFleetHUD" class="flex gap-1 justify-center items-center font-mono-tactical text-[9px] w-full max-w-[390px]">
-                        <span id="pfleet-Carrier" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap">Carrier [5]</span>
-                        <span id="pfleet-Battleship" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap">Battle [4]</span>
-                        <span id="pfleet-Cruiser" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap">Cruiser [3]</span>
-                        <span id="pfleet-Submarine" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap">Sub [3]</span>
-                        <span id="pfleet-Destroyer" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap">Dest [2]</span>
+                    <div id="playerFleetHUD" class="grid grid-cols-5 gap-1.5 w-full max-w-[390px] font-mono-tactical text-[11px] text-center">
+                        <span id="pfleet-Carrier" class="fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate">Carrier(5)</span>
+                        <span id="pfleet-Battleship" class="fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate">Battle(4)</span>
+                        <span id="pfleet-Cruiser" class="fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate">Cruiser(3)</span>
+                        <span id="pfleet-Submarine" class="fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate">Sub(3)</span>
+                        <span id="pfleet-Destroyer" class="fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate">Dest(2)</span>
                     </div>
                 </div>
                 <div id="playerGrid" class="grid-board bg-slate-900/80 p-2.5 rounded-xl border-2 border-cyan-900/70 shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all"></div>
@@ -349,12 +354,12 @@
                         <h2 class="text-base font-bold tracking-wider text-rose-400 uppercase">Vùng Biển Đối Phương</h2>
                     </div>
                     <!-- Mini HUD 5 tàu của Địch -->
-                    <div id="enemyFleetHUD" class="flex gap-1 justify-center items-center font-mono-tactical text-[9px] w-full max-w-[390px]">
-                        <span id="efleet-Carrier" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap">Carrier [5]</span>
-                        <span id="efleet-Battleship" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap">Battle [4]</span>
-                        <span id="efleet-Cruiser" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap">Cruiser [3]</span>
-                        <span id="efleet-Submarine" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap">Sub [3]</span>
-                        <span id="efleet-Destroyer" class="fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap">Dest [2]</span>
+                    <div id="enemyFleetHUD" class="grid grid-cols-5 gap-1.5 w-full max-w-[390px] font-mono-tactical text-[11px] text-center">
+                        <span id="efleet-Carrier" class="fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate">Carrier(5)</span>
+                        <span id="efleet-Battleship" class="fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate">Battle(4)</span>
+                        <span id="efleet-Cruiser" class="fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate">Cruiser(3)</span>
+                        <span id="efleet-Submarine" class="fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate">Sub(3)</span>
+                        <span id="efleet-Destroyer" class="fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate">Dest(2)</span>
                     </div>
                 </div>
                 <div id="botGrid" class="grid-board radar-scan bg-slate-900/80 p-2.5 rounded-xl border-2 border-rose-950/70 opacity-40 pointer-events-none transition-all shadow-[0_0_20px_rgba(244,63,94,0.08)]"></div>
@@ -1349,30 +1354,30 @@
             const prefix = (target === 'enemy') ? 'efleet' : 'pfleet';
             const badge = document.getElementById(`${prefix}-${shipName}`);
             if (badge) {
+                // Chỉ thêm class gạch ngang và xám màu, KHÔNG gán đè innerHTML để không bị phình kích thước
                 badge.classList.add('fleet-ship-sunk');
-                badge.innerHTML = `☠️ ${shipName} [CHÌM]`;
             }
         }
 
         function resetFleetHUD() {
-            const shortNames = {
-                Carrier: 'Carrier [5]',
-                Battleship: 'Battle [4]',
-                Cruiser: 'Cruiser [3]',
-                Submarine: 'Sub [3]',
-                Destroyer: 'Dest [2]'
+            const labelMap = {
+                Carrier: 'Carrier(5)',
+                Battleship: 'Battle(4)',
+                Cruiser: 'Cruiser(3)',
+                Submarine: 'Sub(3)',
+                Destroyer: 'Dest(2)'
             };
 
             SHIPS_DATA.forEach(s => {
                 const pBadge = document.getElementById(`pfleet-${s.name}`);
                 if (pBadge) {
-                    pBadge.className = 'fleet-ship-badge px-1.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 font-bold whitespace-nowrap';
-                    pBadge.innerText = shortNames[s.name] || `${s.name} [${s.size}]`;
+                    pBadge.className = 'fleet-ship-badge py-1 rounded border border-cyan-500/50 bg-cyan-950/50 text-cyan-300 font-bold truncate';
+                    pBadge.innerText = labelMap[s.name] || `${s.name}(${s.size})`;
                 }
                 const eBadge = document.getElementById(`efleet-${s.name}`);
                 if (eBadge) {
-                    eBadge.className = 'fleet-ship-badge px-1.5 py-0.5 rounded border border-rose-500/40 bg-rose-950/40 text-rose-300 font-bold whitespace-nowrap';
-                    eBadge.innerText = shortNames[s.name] || `${s.name} [${s.size}]`;
+                    eBadge.className = 'fleet-ship-badge py-1 rounded border border-rose-500/50 bg-rose-950/50 text-rose-300 font-bold truncate';
+                    eBadge.innerText = labelMap[s.name] || `${s.name}(${s.size})`;
                 }
             });
         }
