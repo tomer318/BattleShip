@@ -3133,6 +3133,8 @@
             isRpsFinished = false;
             gameMode = 'pvp';
 
+            console.log("Kích hoạt Smart Polling cho phòng:", roomCode);
+
             pvpSyncInterval = setInterval(async () => {
                 const activeCode = window.activePvpRoomCode || currentPvpRoomCode || roomCode;
 
@@ -3151,16 +3153,33 @@
                     if (data.my_role && data.my_role !== 'spectator') {
                         myPvpRole = data.my_role;
                     }
+                    
+                    if (phase === 'playing' && room.status === 'playing') {
+                        const isMyTurn = (room.current_turn === myPvpRole);
+                        const bGrid = document.getElementById('botGrid');
+                        if (bGrid) {
+                            if (isMyTurn && bGrid.classList.contains('pointer-events-none')) {
+                                bGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
+                                bGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
+                            } else if (!isMyTurn && !bGrid.classList.contains('pointer-events-none')) {
+                                bGrid.classList.add('pointer-events-none', 'opacity-40');
+                                bGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
+                            }
+                        }
+                    }
 
-                    // 1. Đóng modal chờ khi người 2 vào phòng
+                    // 1. Phía máy 1: Nếu modal chờ đang hiển thị và server đã có người thứ 2 vào phòng
                     const pvpModal = document.getElementById('pvpModal');
                     const isModalStillOpen = pvpModal && !pvpModal.classList.contains('hidden');
+
                     if (room.player2_id && (isModalStillOpen || !hasHandledPlayerJoined)) {
                         hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
 
-                    // 2. Khi cả 2 người đã bấm "Vào Trận" -> bật modal Oẳn Tù Tì (CHỈ MỞ KHI CHƯA XONG RPS)
+                    // 2. Khi cả 2 người đã bấm "Vào Trận" -> bật popup Oẳn Tù Tì
                     if (room.status === 'rps_pending' && !isRpsFinished) {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && rpsModal.classList.contains('hidden')) {
@@ -3174,17 +3193,13 @@
                         handlePvpRpsEvent(data.rps_result);
                     }
 
-                    // 4. KHI TRẬN ĐẤU ĐÃ BẮT ĐẦU (room.status === 'playing'):
-                    // KHÓA VÀ ĐÓNG TRIỆT ĐỂ MODAL RPS Ở CẢ 2 MÁY
+                    // 4. Khi trận đấu bắt đầu (playing): Khóa vĩnh viễn modal RPS
                     if (room.status === 'playing') {
-                        isRpsFinished = true; // Khóa vĩnh viễn không cho mở lại RPS
-                        
+                        isRpsFinished = true;
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && !rpsModal.classList.contains('hidden')) {
                             rpsModal.classList.add('hidden');
                         }
-
-                        // Nếu máy này vẫn chưa chuyển sang phase playing thì đưa vào trận ngay
                         if (phase !== 'playing') {
                             realStartPvpBattle(room.current_turn);
                         }
@@ -3348,11 +3363,16 @@
                 
                 const isMyTurnNow = (shot.next_turn === myPvpRole);
                 const botGrid = document.getElementById('botGrid');
+
                 if (isMyTurnNow) {
-                    botGrid.classList.remove('pointer-events-none', 'opacity-60');
+                    // GỠ SẠCH TẤT CẢ LỚP KHÓA VÀ LÀM SÁNG BÀN CỜ ĐỊCH
+                    botGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
+                    botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                     document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
                 } else {
-                    botGrid.classList.add('pointer-events-none', 'opacity-60');
+                    // KHÓA BÀN CỜ KHI ĐẾN LƯỢT ĐỐI THỦ
+                    botGrid.classList.add('pointer-events-none', 'opacity-40');
+                    botGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                     document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
                 }
                 startTurnTimer(isMyTurnNow);
@@ -3828,29 +3848,39 @@
 
         function realStartPvpBattle(starterRole) {
             phase = 'playing';
+            isRpsFinished = true;
             playSFX('alarm');
             setSurrenderButtonVisibility(true);
 
+            // Đóng sạch popup RPS và mở bảng điều khiển
+            const rpsModal = document.getElementById('rpsModal');
+            if (rpsModal) rpsModal.classList.add('hidden');
+
+            const placementControls = document.getElementById('placementControls');
+            if (placementControls) placementControls.classList.add('hidden');
+
             const isMyTurn = (myPvpRole === starterRole);
             const botGrid = document.getElementById('botGrid');
-            botGrid.classList.remove('opacity-40', 'pointer-events-none');
-            botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
 
+            // GẮN SỰ KIỆN CLICK BẮN CHO TOÀN BỘ 100 Ô BÀN CỜ ĐỊCH
             for (let y = 0; y < 10; y++) {
                 for (let x = 0; x < 10; x++) {
                     const c = document.getElementById(`b-${x}-${y}`);
                     if (c) {
                         c.onclick = () => fireAt(x, y);
-                        c.classList.add('cursor-pointer', 'hover:border-rose-500/60');
+                        c.className = 'cell bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 rounded-sm cursor-pointer hover:border-rose-500/60';
+                        delete c.dataset.fired;
                     }
                 }
             }
 
             if (isMyTurn) {
-                botGrid.classList.remove('pointer-events-none');
+                botGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
+                botGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                 document.getElementById('gameStatusText').innerText = "BẠN KHAI HỎA TRƯỚC: Chọn tọa độ trên vùng biển đối phương để khai hỏa!";
             } else {
-                botGrid.classList.add('pointer-events-none');
+                botGrid.classList.add('pointer-events-none', 'opacity-40');
+                botGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                 document.getElementById('gameStatusText').innerText = "ĐỐI THỦ KHAI HỎA TRƯỚC: Đang chờ đối thủ ngắm bắn...";
             }
 
