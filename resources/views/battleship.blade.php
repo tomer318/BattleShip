@@ -3148,7 +3148,7 @@
 
         let pvpSyncInterval = null;
         let lastSyncedShotCount = 0;
-        let hasHandledPlayerJoined = false; // Cờ chặn spam lặp sự kiện vào phòng
+        let hasHandledPlayerJoined = false;
 
         function startPvpStateSync(roomCode) {
             clearInterval(pvpSyncInterval);
@@ -3156,6 +3156,7 @@
             hasHandledPlayerJoined = false;
 
             pvpSyncInterval = setInterval(async () => {
+                // Nếu không còn ở chế độ pvp thì dừng polling
                 if (gameMode !== 'pvp' || !currentPvpRoomCode || phase === 'ended') {
                     if (phase === 'ended') clearInterval(pvpSyncInterval);
                     return;
@@ -3168,20 +3169,24 @@
 
                     const room = data.room;
 
-                    // 1. Chỉ gọi vào phòng ĐÚNG 1 LẦN DUY NHẤT khi phát hiện đối thủ
-                    if (room.player2_id && !hasHandledPlayerJoined) {
+                    // 1. Phía máy 1 (chủ phòng): Khi có player2 vào phòng thì lập tức đóng popup chờ
+                    if (myPvpRole === 'player1' && room.player2_id && !hasHandledPlayerJoined) {
                         hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
 
-                    // 2. Khi cả 2 người đã bấm sẵn sàng -> mở Oẳn Tù Tì
-                    if (room.status === 'rps_pending' && document.getElementById('rpsModal').classList.contains('hidden')) {
-                        onBothPlayersReady(room);
+                    // 2. Khi cả 2 người đã bấm "Vào Trận" (sẵn sàng) -> bật popup Oẳn Tù Tì
+                    if (room.status === 'rps_pending') {
+                        const rpsModal = document.getElementById('rpsModal');
+                        if (rpsModal && rpsModal.classList.contains('hidden')) {
+                            onBothPlayersReady(room);
+                        }
                     }
 
-                    // 3. Khi một bên đã chọn quyền đi trước trong Oẳn Tù Tì -> chuyển thẳng vào trận chiến
+                    // 3. Khi lượt Oẳn Tù Tì kết thúc (status chuyển sang playing) -> vào trận bắn
                     if (room.status === 'playing' && phase === 'setup') {
-                        closeModal('rpsModal');
+                        const rpsModal = document.getElementById('rpsModal');
+                        if (rpsModal) rpsModal.classList.add('hidden');
                         realStartPvpBattle(room.current_turn);
                     }
 
@@ -3211,7 +3216,7 @@
                         }
                     }
 
-                    // 5. Đồng bộ kết thúc ván đấu
+                    // 5. Đồng bộ khi có kết quả thắng thua
                     if (room.status === 'finished' && phase === 'playing') {
                         handlePvpShotResult({
                             status: 'finished',
@@ -3219,15 +3224,23 @@
                             is_surrender: false
                         });
                     }
-                } catch(err) {}
+                } catch (err) {}
             }, 1000);
         }
 
         function handlePlayerJoined(data) {
             if (!data || !data.room) return;
-            log(`[PVP ONLINE] Đối thủ đã kết nối vào phòng! Bắt đầu trận chiến!`, 'text-emerald-400 font-bold');
+            
+            // Đóng sạch toàn bộ modal PvP trên màn hình máy 1
+            const pvpModal = document.getElementById('pvpModal');
+            if (pvpModal) pvpModal.classList.add('hidden');
+            
+            const waitingSection = document.getElementById('pvpWaitingSection');
+            if (waitingSection) waitingSection.classList.add('hidden');
+
             playSFX('victory');
-            closeModal('pvpModal');
+            log(`[PVP ONLINE] Đối thủ đã kết nối vào phòng! Bắt đầu dàn trận!`, 'text-emerald-400 font-bold');
+            
             startPvpMatch(data.room, 'player1');
         }
 
