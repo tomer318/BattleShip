@@ -1039,6 +1039,7 @@
         let targetingSkill = null;
         let lastGameStats = null;
         let botItemSlots = [];
+        let pvpPollingInterval = null;
 
         let currentPvpRoomCode = null;
         let gameMode = 'pve';
@@ -3095,13 +3096,14 @@
             openModal('pvpModal');
         }
 
-        // Khởi tạo kết nối Pusher/Reverb client chuẩn xác
-        const pusherClient = new Pusher("{{ env('REVERB_APP_KEY') }}", {
+        // Khởi tạo kết nối Pusher/Reverb thích ứng cả Local lẫn Render HTTPS
+        const isHttps = window.location.protocol === 'https:';
+        const pusherClient = new Pusher("{{ env('REVERB_APP_KEY', 'battleship_key') }}", {
             cluster: 'mt1',
             wsHost: window.location.hostname,
-            wsPort: {{ env('REVERB_PORT', 8080) }},
-            wssPort: {{ env('REVERB_PORT', 8080) }},
-            forceTLS: false,
+            wsPort: isHttps ? 443 : {{ env('REVERB_PORT', 8080) }},
+            wssPort: isHttps ? 443 : {{ env('REVERB_PORT', 8080) }},
+            forceTLS: isHttps,
             enabledTransports: ['ws', 'wss'],
         });
 
@@ -3180,6 +3182,23 @@
                     document.getElementById('displayRoomCode').innerText = data.room_code;
                     
                     subscribeToRoom(data.room_code);
+
+                    // POLLING DỰ PHÒNG: Cứ mỗi 2 giây kiểm tra xem người thứ 2 đã vào phòng chưa
+                    clearInterval(pvpPollingInterval);
+                    pvpPollingInterval = setInterval(async () => {
+                        if (!currentPvpRoomCode || phase !== 'setup') {
+                            clearInterval(pvpPollingInterval);
+                            return;
+                        }
+                        try {
+                            const checkRes = await fetch(`/api/pvp/room-status?room_code=${currentPvpRoomCode}`);
+                            const checkData = await checkRes.json();
+                            if (checkData.room && checkData.room.player2_id && document.getElementById('pvpWaitingSection').classList.contains('hidden') === false) {
+                                clearInterval(pvpPollingInterval);
+                                handlePlayerJoined({ room: checkData.room });
+                            }
+                        } catch (e) {}
+                    }, 2000);
 
                     playSFX('click');
                     log(`Đã tạo phòng PvP thành công: [${data.room_code}]. Đang đợi đối thủ tham gia...`, 'text-indigo-400 font-bold');

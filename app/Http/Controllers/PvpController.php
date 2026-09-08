@@ -844,4 +844,14 @@ class PvpController extends Controller
 
         return response()->json(['status' => 'success', 'starter' => $starterRole]);
     }
+
+    public function getRoomStatus(Request $request): JsonResponse
+    {
+        $roomCode = strtoupper(trim($request->input('room_code')));
+        $room = Room::where('room_code', $roomCode)->first();
+        if (!$room) {
+            return response()->json(['error' => 'Phòng không tồn tại'], 404);
+        }
+        return response()->json(['room' => $room]);
+    }
 }
