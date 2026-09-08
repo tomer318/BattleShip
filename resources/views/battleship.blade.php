@@ -3113,36 +3113,9 @@
             } catch (e) {}
         }
 
+        // KHỞI TẠO KẾT NỐI PVP HOÀN TOÀN BẰNG SMART POLLING (Tương thích 100% trên Render Free Tier)
         function subscribeToRoom(roomCode) {
-            if (pusherClient) {
-                try {
-                    if (pvpEchoChannel) {
-                        pusherClient.unsubscribe('room.' + roomCode);
-                    }
-                    pvpEchoChannel = pusherClient.subscribe('room.' + roomCode);
-
-                    pvpEchoChannel.bind('player.joined', data => handlePlayerJoined(data));
-                    pvpEchoChannel.bind('.player.joined', data => handlePlayerJoined(data));
-
-                    pvpEchoChannel.bind('pvp.game.started', data => {
-                        if (data && data.room) onBothPlayersReady(data.room);
-                    });
-                    pvpEchoChannel.bind('.pvp.game.started', data => {
-                        if (data && data.room) onBothPlayersReady(data.room);
-                    });
-
-                    pvpEchoChannel.bind('pvp.shot.fired', data => handlePvpShotResult(data.shotData));
-                    pvpEchoChannel.bind('.pvp.shot.fired', data => handlePvpShotResult(data.shotData));
-
-                    pvpEchoChannel.bind('pvp.skill.used', data => handlePvpSkillEffect(data.skillData));
-                    pvpEchoChannel.bind('pvp.rps.event', data => handlePvpRpsEvent(data.rpsData || data));
-                    pvpEchoChannel.bind('.pvp.rps.event', data => handlePvpRpsEvent(data.rpsData || data));
-                } catch(e) {
-                    console.log("Lỗi khởi tạo kênh Reverb:", e);
-                }
-            }
-
-            // KÍCH HOẠT SMART POLLING REALTIME DỰ PHÒNG XUYÊN SUỐT TRẬN ĐẤU
+            // Kích hoạt Smart Polling real-time xuyên suốt trận đấu (1 giây/lần)
             startPvpStateSync(roomCode);
         }
 
@@ -3156,7 +3129,6 @@
             hasHandledPlayerJoined = false;
 
             pvpSyncInterval = setInterval(async () => {
-                // Nếu không còn ở chế độ pvp thì dừng polling
                 if (gameMode !== 'pvp' || !currentPvpRoomCode || phase === 'ended') {
                     if (phase === 'ended') clearInterval(pvpSyncInterval);
                     return;
@@ -3183,7 +3155,7 @@
                         }
                     }
 
-                    // 3. Khi lượt Oẳn Tù Tì kết thúc (status chuyển sang playing) -> vào trận bắn
+                    // 3. Khi lượt Oẳn Tù Tì kết thúc -> vào trận bắn
                     if (room.status === 'playing' && phase === 'setup') {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal) rpsModal.classList.add('hidden');
