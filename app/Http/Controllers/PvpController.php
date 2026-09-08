@@ -54,28 +54,38 @@ class PvpController extends Controller
             return response()->json(['error' => 'Không tìm thấy mã phòng tác chiến này!'], 404);
         }
 
-        if ($room->status !== 'waiting') {
-            return response()->json(['error' => 'Phòng này đã bắt đầu trận chiến hoặc đã đóng!'], 400);
-        }
-
+        // Nếu chính chủ phòng bấm vào lại phòng của mình
         if ($room->player1_id === $user->id) {
             return response()->json(['status' => 'success', 'room' => $room, 'role' => 'player1']);
         }
 
+        // Nếu phòng đã đủ 2 người và đúng là người chơi thứ 2 quay lại
+        if ($room->player2_id === $user->id) {
+            return response()->json(['status' => 'success', 'room' => $room, 'role' => 'player2']);
+        }
+
+        // Nếu phòng đã có người khác chiếm chỗ
         if ($room->player2_id && $room->player2_id !== $user->id) {
             return response()->json(['error' => 'Phòng đấu đã đủ 2 chỉ huy!'], 400);
         }
 
+        if ($room->status !== 'waiting' && $room->status !== 'setup') {
+            return response()->json(['error' => 'Phòng này đã bắt đầu trận chiến hoặc đã đóng!'], 400);
+        }
+
+        // GÁN NGAY LẬP TỨC PLAYER 2 VÀ ĐỔI TRẠNG THÁI PHÒNG
         $room->player2_id = $user->id;
         $room->status = 'setup'; 
         $room->save();
 
-        broadcast(new \App\Events\PlayerJoinedRoom($room))->toOthers();
+        try {
+            broadcast(new \App\Events\PlayerJoinedRoom($room))->toOthers();
+        } catch (\Exception $e) {}
 
         return response()->json([
-            'status' => 'success',
-            'room'   => $room,
-            'role'   => 'player2',
+            'status'  => 'success',
+            'room'    => $room,
+            'role'    => 'player2',
             'message' => 'Đã gia nhập phòng chiến thành công!',
         ]);
     }
@@ -875,6 +885,7 @@ class PvpController extends Controller
             'current_turn' => $room->current_turn,
             'game_status'  => $room->status,
             'winner'       => $room->winner,
+            'player2_id'   => $room->player2_id, // Đảm bảo trả về ID người chơi 2 để phía client bắt chính xác
             'p1_shots'     => $room->p1_shots ?? [],
             'p2_shots'     => $room->p2_shots ?? [],
             'p1_ready'     => (bool) $room->p1_ready,
