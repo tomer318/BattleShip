@@ -861,122 +861,152 @@
     <!-- MODAL HƯỚNG DẪN & CẨM NANG QUÂN SỰ TỐI CAO -->
     <div id="guideModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-slate-900 border-2 border-cyan-500/60 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(6,182,212,0.25)] overflow-hidden">
-            <!-- Tiêu đề Header -->
+            <!-- Header Modal -->
             <div class="px-6 py-4 bg-slate-950/90 border-b border-cyan-500/40 flex justify-between items-center">
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">📜</span>
                     <div>
-                        <h2 class="text-xl font-black text-cyan-400 uppercase tracking-wider">CẨM NANG CHỈ HUY QUÂN SỰ</h2>
-                        <p class="text-sm text-slate-400">Luật hải chiến, cơ chế kinh tế, vũ khí công nghệ và hệ thống đấu trường</p>
+                        <h2 class="text-xl font-black text-cyan-400 uppercase tracking-wider">CẨM NANG CHỈ HUY HẢI CHIẾN (TỪ A - Z)</h2>
+                        <p class="text-xs text-slate-400">Dành cho người mới bắt đầu: Quy tắc sinh tồn, thao tác tác chiến & công nghệ quân sự</p>
                     </div>
                 </div>
                 <button onclick="closeGuideModal()" class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-rose-400 border border-slate-700 font-bold transition text-lg font-mono-tactical">✕</button>
             </div>
 
-            <!-- Nội dung cẩm nang (Cuộn mượt, cỡ chữ to 15px - 16px) -->
-            <div class="p-6 overflow-y-auto space-y-6 text-slate-200 text-[15px] leading-relaxed">
+            <!-- Nội dung cẩm nang -->
+            <div class="p-6 overflow-y-auto space-y-6 text-slate-200 text-sm leading-relaxed">
                 
-                <!-- Mục 1: Bố trí lực lượng & Luật Khai Hỏa -->
-                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-cyan-300 flex items-center gap-2 mb-3">
-                        <span>⚓</span> 1. QUY TẮC DÀN TRẬN & VÒNG KHAI HỎA
+                <!-- Mục 0: Giới thiệu cho người mới -->
+                <section class="bg-gradient-to-r from-cyan-950/40 via-slate-950 to-cyan-950/40 p-5 rounded-xl border border-cyan-500/30">
+                    <h3 class="text-base font-bold text-cyan-300 flex items-center gap-2 mb-2">
+                        <span>🎯</span> BATTLESHIP LÀ TRÒ GÌ? MỤC TIÊU CHIẾN THẮNG RA SAO?
                     </h3>
-                    <ul class="list-disc pl-5 space-y-2 text-slate-300">
-                        <li><strong class="text-white">Hạm đội tác chiến:</strong> Mỗi chỉ huy sở hữu 5 chiến hạm tiêu chuẩn: <em>Carrier (5 ô)</em>, <em>Battleship (4 ô)</em>, <em>Cruiser (3 ô)</em>, <em>Submarine (3 ô)</em>, và <em>Destroyer (2 ô)</em>.</li>
-                        <li><strong class="text-white">Dàn trận tự do:</strong> Bạn có thể dùng nút <span class="text-amber-400 font-bold">🎲 TỰ ĐỘNG XẾP</span> để roll ngẫu nhiên, hoặc bấm trực tiếp vào tên tàu đã đặt để <span class="text-rose-400 font-bold">thu hồi (Undo)</span> từng chiếc đặt lại.</li>
-                        <li><strong class="text-white">Quy tắc bắn:</strong> Đấu theo lượt (Turn-based 15s). Nếu bắn <span class="text-emerald-400 font-bold">TRÚNG</span> tàu địch, bạn sẽ được <strong class="text-white">bắn tiếp thêm lượt nữa</strong>. Nếu bắn <span class="text-rose-400 font-bold">TRƯỢT</span>, quyền bắn chuyển sang đối phương.</li>
-                        <li><strong class="text-white">Dấu vết hỏa lực:</strong> Ô phát bắn mới nhất sẽ luôn có biểu tượng <span class="text-rose-400 font-bold">🎯 vòng tròn đỏ phát sáng</span> để nhận diện ngay tọa độ vừa nã đạn.</li>
+                    <p class="text-slate-300 mb-2">
+                        Battleship (Bắn Tàu Chiến) là trò chơi chiến thuật đối kháng theo lượt trên lưới tọa độ $10 \times 10$ (từ hàng A-J và cột 1-10). Cả 2 bên đều có <strong>2 bàn cờ riêng biệt</strong>:
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono-tactical text-xs mt-2">
+                        <div class="p-3 bg-slate-900/80 rounded border border-cyan-500/30">
+                            <span class="text-cyan-400 font-bold block mb-1">🟦 BÀN CỜ BÊN TRÁI (Hạm Đội Của Bạn):</span>
+                            Nơi bạn giấu 5 chiến hạm của mình. Bạn sẽ thấy các phát đạn đối phương bắn vào mình hiển thị tại đây.
+                        </div>
+                        <div class="p-3 bg-slate-900/80 rounded border border-rose-500/30">
+                            <span class="text-rose-400 font-bold block mb-1">🟥 BÀN CỜ BÊN PHẢI (Vùng Biển Đối Phương):</span>
+                            Tàu của địch hoàn toàn ẩn dưới sương mù. Bạn phải phán đoán và click vào từng ô để khai hỏa bắn chìm tàu địch!
+                        </div>
+                    </div>
+                    <p class="text-amber-300 text-xs font-bold mt-3">
+                        ⭐ Mục tiêu tối thượng: Chỉ huy nào bắn chìm toàn bộ 5 chiến hạm (tổng cộng 17 ô thân tàu) của đối phương trước sẽ giành CHIẾN THẮNG CHUNG CUỘC!
+                    </p>
+                </section>
+
+                <!-- Mục 1: Thao tác Dàn Trận -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-base font-bold text-cyan-300 flex items-center gap-2 mb-3">
+                        <span>⚓</span> 1. CÁCH BỐ TRÍ HẠM ĐỘI (GIAI ĐOẠN DÀN TRẬN)
+                    </h3>
+                    <p class="text-slate-300 mb-2">Mỗi chỉ huy được trang bị đúng 5 chiến hạm với chiều dài ô khác nhau:</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono-tactical text-xs text-center mb-3">
+                        <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Carrier</span>5 ô liên tiếp</div>
+                        <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Battleship</span>4 ô liên tiếp</div>
+                        <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Cruiser</span>3 ô liên tiếp</div>
+                        <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Submarine</span>3 ô liên tiếp</div>
+                        <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Destroyer</span>2 ô liên tiếp</div>
+                    </div>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300 text-xs sm:text-sm">
+                        <li><strong>Cách xếp thủ công:</strong> Chọn tên tàu ở hàng trên $\rightarrow$ Nhấn phím <span class="text-indigo-300 font-bold underline">R</span> hoặc nút <em>"Hướng"</em> để xoay Ngang / Dọc $\rightarrow$ Bấm vào ô trên Bàn Cờ Bên Trái để đặt.</li>
+                        <li><strong>Thu hồi / Xếp lại từng tàu (Undo):</strong> Nếu đặt sai vị trí, chỉ cần <strong>click trực tiếp vào tên chiếc tàu đã có dấu tích (✓)</strong> ở danh sách phía trên để gỡ riêng tàu đó ra và đặt lại!</li>
+                        <li><strong>Tự động xếp cực nhanh:</strong> Bấm nút <span class="text-amber-400 font-bold">🎲 TỰ ĐỘNG XẾP</span> để máy tự roll ngẫu nhiên 5 tàu. Bạn có thể roll liên tục đến khi ưng ý rồi bấm <span class="text-emerald-400 font-bold">VÀO TRẬN</span>!</li>
                     </ul>
                 </section>
 
-                <!-- Mục 2: Tiền Vàng, Kim Cương & Điểm Quân Công -->
+                <!-- Mục 2: Quy tắc Khai hỏa & Đọc kết quả -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-base font-bold text-rose-300 flex items-center gap-2 mb-3">
+                        <span>🔥</span> 2. QUY TẮC KHAI HỎA & CÁCH ĐỌC KẾT QUẢ TRÊN BẢN ĐỒ
+                    </h3>
+                    <ul class="list-disc pl-5 space-y-2 text-slate-300 text-xs sm:text-sm">
+                        <li><strong>Thao tác bắn:</strong> Khi đến lượt của bạn (bàn cờ bên phải sáng lên), nhấp chuột trái vào bất kỳ tọa độ ô nào trên vùng biển đối phương.</li>
+                        <li><span class="text-emerald-400 font-bold">BẮN TRÚNG (Ô đỏ hiện chữ ✕):</span> Đạn bắn trúng thân tàu địch! <strong>Đặc quyền: Bạn được thưởng ngay 1 lượt bắn tiếp theo!</strong> Hãy ngắm bắn các ô liền kề (trên, dưới, trái, phải) để dò hết chiều dài của chiếc tàu đó.</li>
+                        <li><span class="text-slate-400 font-bold">BẮN TRƯỢT (Ô xám hiện dấu •):</span> Ô đó chỉ là mặt biển trống. Bạn sẽ hết lượt và quyền bắn chuyển giao cho đối phương.</li>
+                        <li><span class="text-rose-400 font-bold">BẮN CHÌM TÀU:</span> Khi bạn bắn trúng tất cả các ô của 1 chiến hạm (ví dụ bắn đủ 5 ô của Carrier), màn hình sẽ bật Banner báo hiệu tàu đối phương đã bị tiêu diệt hoàn toàn và tên tàu trên thanh HUD sẽ bị gạch ngang.</li>
+                        <li><strong>Dấu vết phát bắn:</strong> Ô vừa bắn ở lượt gần nhất sẽ có ký hiệu <span class="text-rose-400 font-bold">🎯 vòng tròn đỏ nhấp nháy</span>. Ô bắn ở lượt ngay trước đó sẽ có ký hiệu <span class="text-amber-400 font-bold">⏱️ đồng hồ vàng</span> giúp bạn dễ dàng bám đuổi đường đạn.</li>
+                        <li><strong>Đồng hồ đếm ngược (Turn Timer 15s):</strong> Mỗi lượt bạn có tối đa 15 giây để suy nghĩ và ngắm bắn. Nếu hết 15s mà chưa bắn, hệ thống sẽ phạt bạn bị mất lượt khai hỏa!</li>
+                    </ul>
+                </section>
+
+                <!-- Mục 3: Hệ thống Kinh Tế & Kho Quân Nhu -->
                 <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
                     <h3 class="text-lg font-bold text-amber-300 flex items-center gap-2 mb-3">
-                        <span>💎</span> 2. HỆ THỐNG KINH TẾ (TIỀN $ & GEMS)
+                        <span>💎</span> 3. HỆ THỐNG KINH TẾ & KHO QUÂN NHU TÁC CHIẾN
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-900/80 p-4 rounded-lg border border-amber-500/20">
-                            <h4 class="font-bold text-amber-400 mb-1.5 flex items-center gap-1.5 text-base">💰 Ngân Sách Tác Chiến ($)</h4>
-                            <p class="text-sm text-slate-300 mb-2">Thưởng qua mỗi phát bắn trúng (+15$), bắn chìm tàu (+100$), thắng Bot (+150$ - 400$) và thắng trận Đấu Rank (+300$).</p>
-                            <p class="text-xs text-amber-200/80">Dùng để mua các kỹ năng tác chiến trong Kho Quân Nhu Hàng Ngày.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 text-xs">
+                        <div class="bg-slate-900/80 p-3.5 rounded-lg border border-amber-500/30">
+                            <span class="text-amber-400 font-bold text-sm block mb-1">💰 Ngân Sách Tác Chiến ($)</span>
+                            Nhận được qua mỗi phát bắn trúng (+15$), bắn chìm tàu (+100$), thắng Bot (+150$ - 400$) và thắng trận Rank (+300$, thua được trợ cấp $75). Dùng để mua kỹ năng tại tab Quân Nhu Hàng Ngày.
                         </div>
-                        <div class="bg-slate-900/80 p-4 rounded-lg border border-purple-500/20">
-                            <h4 class="font-bold text-purple-400 mb-1.5 flex items-center gap-1.5 text-base">💎 Kim Cương Quý (Gems)</h4>
-                            <p class="text-sm text-slate-300 mb-2">Phần thưởng quân công danh giá nhận được khi mở khóa <strong class="text-white">Thành Tựu Hải Quân</strong> (từ 2 đến 100 Gems/thành tựu) hoặc thăng quân hàm Rank.</p>
-                            <p class="text-xs text-purple-200/80">Dùng để mua trang bị Chợ Đen không giới hạn số lượng và làm mới shop khẩn cấp.</p>
+                        <div class="bg-slate-900/80 p-3.5 rounded-lg border border-fuchsia-500/30">
+                            <span class="text-fuchsia-400 font-bold text-sm block mb-1">💎 Kim Cương (Gems)</span>
+                            Tặng sẵn 30 Gems khi đăng ký tài khoản mới và nhận thêm khi mở khóa Quân Công Thành Tựu hoặc thắng Rank (+5 Gems). Dùng để mua đồ không giới hạn tại Chợ Đen Vô Cực và làm mới Shop.
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mb-2 font-bold uppercase">Cách sử dụng 9 Vũ Khí Công Nghệ Cao (Cột bên trái bàn cờ):</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-cyan-500/30">
+                            <strong class="text-cyan-400 block mb-0.5">🛰️ Vệ Tinh Quét Vị Trí</strong>
+                            Bấm kích hoạt: Vệ tinh tự động quét và làm lộ diện ngay 1 ô có tàu địch còn sống.
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-cyan-500/30">
+                            <strong class="text-cyan-400 block mb-0.5">📡 Radar Vùng 3x3</strong>
+                            Bấm chọn, sau đó click vào 1 ô trên biển địch làm tâm: Máy báo tổng số ô tàu đang ẩn náu trong phạm vi 3x3.
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-cyan-500/30">
+                            <strong class="text-cyan-400 block mb-0.5">🔊 Sonar Cảm Biến 5x5</strong>
+                            Click vào 1 ô trên biển địch: Sóng âm báo khoảng cách tới tàu địch gần nhất (Rất gần, Gần, Xa, Rất xa).
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-rose-500/30">
+                            <strong class="text-rose-400 block mb-0.5">🚀 Tên Lửa Dẫn Đường</strong>
+                            Tự động tìm kiếm và bắn trúng ngay 1 ô tàu nguyên vẹn của đối phương mà không cần tự ngắm!
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-rose-500/30">
+                            <strong class="text-rose-400 block mb-0.5">✈️ Không Kích Phá Rối</strong>
+                            Điều động phi đội oanh tạc: Tước quyền phản công khiến đối thủ bị mất 1 lượt bắn tiếp theo.
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-rose-500/30">
+                            <strong class="text-rose-400 block mb-0.5">💨 Màn Khói Nhiễu Loạn</strong>
+                            Tung khói mù che hạm đội ta: Đối phương sẽ không biết mình bắn trúng hay trượt trong 5 phát đạn tới.
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-emerald-500/30">
+                            <strong class="text-emerald-400 block mb-0.5">🛡️ Khiên Năng Lượng</strong>
+                            Bật từ trường phòng thủ: Miễn nhiễm hoàn toàn 3 phát đạn trúng tiếp theo của đối phương.
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-emerald-500/30">
+                            <strong class="text-emerald-400 block mb-0.5">🔧 Tái Cấu Trúc Khẩn Cấp</strong>
+                            Bấm vào tàu đang bị thương của ta: Hồi phục 100% máu và bí mật di dời tàu sang vị trí an toàn mới!
+                        </div>
+                        <div class="p-2.5 bg-slate-900/90 rounded border border-emerald-500/30">
+                            <strong class="text-emerald-400 block mb-0.5">⚓ Cơ Động Chiến Thuật</strong>
+                            Chọn 1 tàu của ta: Bí mật điều chuyển tàu sang tọa độ mới chưa bị đối phương dòm ngó.
                         </div>
                     </div>
                 </section>
 
-                <!-- Mục 3: Kho Quân Nhu & Chi Tiết 9 Trang Bị Tác Chiến -->
+                <!-- Mục 4: Đấu Trường Rank & Đấu Mạng PvP -->
                 <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-indigo-300 flex items-center gap-2 mb-3">
-                        <span>🎒</span> 3. KHO QUÂN NHU: 9 TRANG BỊ TÁC CHIẾN TỐI TÂN
+                    <h3 class="text-base font-bold text-yellow-300 flex items-center gap-2 mb-3">
+                        <span>⚔️</span> 4. ĐẤU MẠNG PVP & ĐẤU RANK TRỰC TUYẾN
                     </h3>
-                    <p class="text-slate-300 text-sm mb-3">Mỗi trang bị ở tab Hàng Ngày bị giới hạn số lượng mua trong ngày (1 - 5 chiếc/ngày). Sử dụng kỹ năng trong trận sẽ tiêu tốn 1 lượt hành động:</p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
-                            <div class="font-bold text-cyan-400 text-sm mb-1">🛰️ Vệ Tinh Quét Vị Trí</div>
-                            <p class="text-xs text-slate-300">Lộ chính xác 1 ô có tàu địch còn sống và tên loại tàu (Giới hạn: 1/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
-                            <div class="font-bold text-cyan-400 text-sm mb-1">📡 Radar Vùng 3x3</div>
-                            <p class="text-xs text-slate-300">Quét khu vực 3x3: Báo tổng số ô chứa thân tàu đang ẩn nấp mà không nổ tàu (Giới hạn: 3/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-cyan-500/30">
-                            <div class="font-bold text-cyan-400 text-sm mb-1">🔊 Sonar Cảm Biến 5x5</div>
-                            <p class="text-xs text-slate-300">Báo khoảng cách: Rất gần, Gần, Xa, Rất xa trong bán kính 5x5 (Giới hạn: 5/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
-                            <div class="font-bold text-rose-400 text-sm mb-1">🚀 Tên Lửa Dẫn Đường</div>
-                            <p class="text-xs text-slate-300">Tự động khóa mục tiêu và bắn trúng ngay 1 ô tàu nguyên vẹn của đối phương (Giới hạn: 1/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
-                            <div class="font-bold text-rose-400 text-sm mb-1">✈️ Không Kích Phá Rối</div>
-                            <p class="text-xs text-slate-300">Yêu cầu Carrier còn sống: Tước quyền phản công 1 lượt của đối phương (Giới hạn: 2/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-rose-500/30">
-                            <div class="font-bold text-rose-400 text-sm mb-1">💨 Màn Khói Nhiễu Loạn</div>
-                            <p class="text-xs text-slate-300">Ẩn kết quả trúng/trượt trong 5 phát đạn tiếp theo của đối phương (Giới hạn: 4/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
-                            <div class="font-bold text-emerald-400 text-sm mb-1">🛡️ Khiên Năng Lượng</div>
-                            <p class="text-xs text-slate-300">Tạo lá chắn từ trường: Vô hiệu hóa 3 phát đạn trúng tiếp theo của đối phương (Giới hạn: 1/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
-                            <div class="font-bold text-emerald-400 text-sm mb-1">🔧 Tái Cấu Trúc Khẩn Cấp</div>
-                            <p class="text-xs text-slate-300">Phục hồi 100% thân tàu bị tổn thương và di chuyển sang tọa độ an toàn mới (Giới hạn: 2/ngày).</p>
-                        </div>
-                        <div class="p-3 bg-slate-900 rounded-lg border border-emerald-500/30">
-                            <div class="font-bold text-emerald-400 text-sm mb-1">⚓ Cơ Động Chiến Thuật</div>
-                            <p class="text-xs text-slate-300">Điều động 1 tàu nguyên vẹn đến vị trí hải đồ mới chưa bị lộ diện (Giới hạn: 3/ngày).</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Mục 4: Độ khó của Bot AI -->
-                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-emerald-300 flex items-center gap-2 mb-3">
-                        <span>🤖</span> 4. CƠ CHẾ BOT AI & CÁC CẤP ĐỘ KHÓ
-                    </h3>
-                    <ul class="space-y-2.5 text-slate-300 text-sm">
-                        <li><strong class="text-emerald-400 text-base">Dễ (Easy):</strong> Bắn ngẫu nhiên hoàn toàn, không có chiến thuật săn lùng và không bao giờ dùng trang bị kỹ năng.</li>
-                        <li><strong class="text-cyan-400 text-base">Trung Bình (Medium):</strong> Khi bắn trúng 1 phát, Bot chuyển sang chế độ <span class="text-white font-semibold">Target Hunting</span> để bắn các ô liền kề. Có thể trang bị 1-2 món trinh sát cơ bản.</li>
-                        <li><strong class="text-amber-400 text-base">Khó (Hard):</strong> Thuật toán Parity Search kết hợp săn lùng thông minh. Sử dụng <span class="text-cyan-300 font-bold">Radar</span>, <span class="text-blue-300 font-bold">Khiên Năng Lượng</span> và có thể dùng <span class="text-rose-400 font-bold">Không Kích</span>.</li>
-                        <li><strong class="text-rose-400 text-base">Cực Khó (AI Nguyên Tử / Nightmare):</strong> Bản đồ nhiệt xác suất (Probability Heatmap). Biết tự động bật <span class="text-emerald-400 font-bold">Khiên Chắn</span> khi nguy cấp, thả <span class="text-purple-400 font-bold">Màn Khói</span> che giấu tàu và phóng <span class="text-rose-400 font-bold">Tên Lửa Dẫn Đường</span> tiêu diệt bạn!</li>
-                    </ul>
-                </section>
-
-                <!-- Mục 5: Đấu Trường Rank & Ghép Trận PvP -->
-                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
-                    <h3 class="text-lg font-bold text-yellow-300 flex items-center gap-2 mb-3">
-                        <span>⚔️</span> 5. ĐẤU MẠNG & ĐẤU RANK TRỰC TUYẾN
-                    </h3>
-                    <div class="space-y-2.5 text-slate-300 text-sm">
-                        <p><strong class="text-white">Bắt đầu trận chiến:</strong> Cả hai cơ trưởng bước vào minigame <span class="text-amber-400 font-bold">Oẳn Tù Tì (Kéo - Búa - Bao)</span>. Người chiến thắng tuyệt đối có toàn quyền chọn <span class="text-cyan-300 font-bold">Đi Trước (Bắn trước)</span> hoặc <span class="text-slate-300 font-bold">Đi Sau</span>.</p>
-                        <p><strong class="text-white">Bậc Quân Hàm:</strong> Chia làm 6 bậc: <em>Thủy Thủ (200 - 999 Elo)</em> $\rightarrow$ <em>Hạ Sĩ Quan (1000+)</em> $\rightarrow$ <em>Sĩ Quan (1500+)</em> $\rightarrow$ <em>Thiếu Tá (2000+)</em> $\rightarrow$ <em>Đại Tá (2500+)</em> $\rightarrow$ <em>Đô Đốc (3000+ Elo)</em>.</p>
-                        <p><strong class="text-white">Hàng chờ thông minh:</strong> Khi bấm <span class="text-amber-400 font-semibold">TÌM TRẬN ĐẤU RANK</span>, hệ thống ưu tiên tìm người chơi thực trong 25 giây. Nếu quá 25 giây chưa có người tương xứng, hệ thống tự động ghép với <span class="text-emerald-300 font-bold">Bot Hải Quân có bậc Elo tương đương</span> để bạn vào trận ngay lập tức mà không phải chờ đợi lâu!</p>
+                    <div class="space-y-2 text-slate-300 text-xs sm:text-sm">
+                        <p><strong>Minigame Tranh Đoạt Khai Hỏa (Kéo - Búa - Bao):</strong> Bắt đầu trận chiến, 2 chỉ huy ra quân để tranh quyền. Người thắng có toàn quyền chọn <span class="text-cyan-300 font-bold">Đi Trước (Bắn trước)</span> để chiếm ưu thế hỏa lực hoặc <span class="text-slate-300 font-bold">Đi Sau</span>.</p>
+                        <p><strong>Hệ thống 6 Bậc Quân Hàm Elo:</strong>
+                            <span class="text-amber-300 font-bold">⚓ Thủy Thủ</span> (0 - 999 Elo) ➔ 
+                            <span class="text-amber-300 font-bold">🎖️ Hạ Sĩ Quan</span> (1000+) ➔ 
+                            <span class="text-amber-300 font-bold">⭐ Sĩ Quan</span> (1500+) ➔ 
+                            <span class="text-amber-300 font-bold">⭐⭐ Thiếu Tá</span> (2000+) ➔ 
+                            <span class="text-amber-300 font-bold">⭐⭐⭐ Đại Tá</span> (2500+) ➔ 
+                            <span class="text-amber-300 font-bold">👑 Đô Đốc</span> (3000+ Elo).
+                        </p>
+                        <p><strong>Hàng Chờ Ghép Trận Thông Minh:</strong> Khi tìm trận Rank, máy chủ ưu tiên ghép bạn với người chơi thực trong 25 giây đầu. Nếu quá 25s chưa có đối thủ trực tuyến, hệ thống tự động ghép với Bot Hải Quân có bậc Elo tương xứng để bạn vào trận lập tức mà không phải chờ đợi!</p>
                     </div>
                 </section>
 
@@ -984,8 +1014,8 @@
 
             <!-- Footer nút đóng -->
             <div class="px-6 py-3.5 bg-slate-950/90 border-t border-slate-800 text-right">
-                <button onclick="closeGuideModal()" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-lg text-sm uppercase tracking-wider transition shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                    ĐÃ HIỂU CHIẾN THUẬT
+                <button onclick="closeGuideModal()" class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-lg text-xs uppercase tracking-wider transition shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                    ĐÃ HIỂU CHIẾN THUẬT - RA KHƠI
                 </button>
             </div>
         </div>
