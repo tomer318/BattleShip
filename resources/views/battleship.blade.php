@@ -3533,15 +3533,71 @@
                 return;
             }
 
-            // 5. XỬ LÝ KẾT THÚC TRẬN ĐẤU
+            // 5. XỬ LÝ KẾT THÚC TRẬN ĐẤU (PVP & RANK ONLINE)
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
-                document.getElementById('turnTimerContainer').classList.add('hidden');
-                document.getElementById('botGrid').classList.add('pointer-events-none', 'opacity-60');
+                
+                const timerEl = document.getElementById('turnTimerContainer');
+                if (timerEl) timerEl.classList.add('hidden');
+                
+                const botGrid = document.getElementById('botGrid');
+                if (botGrid) botGrid.classList.add('pointer-events-none', 'opacity-60');
+                
                 setSurrenderButtonVisibility(false);
+
                 const isIWin = (shot.winner === myPvpRole);
-                document.getElementById('gameStatusText').innerText = isIWin ? "🏆 CHIẾN THẮNG CHUNG CUỘC!" : "☠️ THẤT BẠI TÁC CHIẾN!";
+
+                // GỌI API CẬP NHẬT ELO, TIỀN VÀ GEMS (Chỉ gọi 1 lần duy nhất)
+                if (!isPvpResultRecorded) {
+                    isPvpResultRecorded = true;
+
+                    const gainedElo = isIWin ? 25 : 0;
+
+                    fetch('/api/ranks/record-result', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({
+                            is_win: isIWin,
+                            gained_elo: gainedElo
+                        })
+                    }).then(async res => {
+                        const data = await res.json();
+                        if (data.status === 'success' && currentUser) {
+                            currentUser.elo = data.elo;
+                            currentUser.rank_tier = data.rank_tier;
+                            if (isIWin) {
+                                currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
+                                currentUser.credits = (currentUser.credits || 0) + 300; // Thưởng $300 khi thắng Rank
+                                currentUser.gems = (currentUser.gems || 0) + 5;       // Thưởng 5 Gems
+                            } else {
+                                currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
+                            }
+                            renderUserHUD();
+                        }
+                        loadAchievements();
+                    }).catch(err => console.error("Lỗi cập nhật kết quả rank:", err));
+                }
+
+                if (isIWin) {
+                    playSFX('victory');
+                    document.getElementById('gameStatusText').innerText = "🏆 CHIẾN THẮNG CHUNG CUỘC! ĐỐI PHƯƠNG ĐÃ BỊ TIÊU DIỆT HOÀN TOÀN! (+25 ELO)";
+                    log("[CHIẾN CÔNG] Bạn đã giành CHIẾN THẮNG vang dội! (+25 ELO | +$300 | +5💎)", "text-amber-300 font-black text-sm");
+                    triggerSkillAlert("🏆 CHIẾN THẮNG HUY HOÀNG! BẠN ĐƯỢC +25 ELO", false);
+
+                    // BẬT MODAL VINH DANH CHIẾN THẮNG CHO NGƯỜI THẮNG
+                    showVictoryModal({
+                        score: 7500,
+                        duration_seconds: 60,
+                        accuracy: 75,
+                        fleet_health: 80
+                    }, 300, 5);
+                } else {
+                    playSFX('alarm');
+                    document.getElementById('gameStatusText').innerText = "☠️ THẤT BẠI TÁC CHIẾN! HẠM ĐỘI CỦA BẠN ĐÃ BỊ ĐÁNH CHÌM! (-15 ELO)";
+                    log("[THẤT BẠI] Toàn bộ hạm đội của bạn đã bị tiêu diệt. (-15 ELO)", "text-rose-500 font-bold text-sm");
+                    triggerSkillAlert("☠️ THẤT BẠI! TOÀN BỘ HẠM ĐỘI BỊ BẮN HẠ (-15 ELO)", true);
+                }
                 return;
             }
 
