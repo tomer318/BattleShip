@@ -1794,7 +1794,7 @@
 
             // NẾU ĐANG CHƠI PVP ONLINE
             if (gameMode === 'pvp') {
-                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                const roomCode = window.activePvpRoomCode || currentPvpRoomCode || currentRoomData?.room_code;
                 try {
                     const payload = Object.assign({ room_code: roomCode, item_id: itemId }, extraParams);
                     const res = await fetch('/api/pvp/use-powerup', {
@@ -1809,7 +1809,12 @@
                             renderPlayerSkills();
                         }
                         
-                        // Nếu là tên lửa dẫn đường trả về kết quả bắn
+                        // KÍCH HOẠT HIỆU ỨNG KỸ NĂNG LÊN BÀN CỜ
+                        if (data.effect) {
+                            handlePvpSkillEffect(data.effect);
+                        }
+
+                        // Nếu là tên lửa dẫn đường trả về phát bắn
                         if (data.shot) {
                             handlePvpShotResult(data.shot);
                         }
@@ -1819,7 +1824,7 @@
                             renderMyFleetGrid(placedShips);
                         }
 
-                        // TIẾP TỤC ĐỒNG HỒ ĐẾM NGƯỢC
+                        // RESET LẠI ĐỒNG HỒ ĐẾM TỪ 15S
                         if (phase === 'playing') {
                             startTurnTimer(true);
                         }
@@ -2668,16 +2673,14 @@
 
             // XỬ LÝ KHAI HỎA TRONG TRẬN PVP ONLINE
             if (gameMode === 'pvp') {
-                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
+                const roomCode = window.activePvpRoomCode || currentPvpRoomCode || currentRoomData?.room_code;
                 if (!roomCode) {
-                    console.error("Không tìm thấy mã phòng PvP!");
                     alert('Lỗi: Không tìm thấy mã phòng tác chiến!');
                     return;
                 }
 
                 const targetCell = document.getElementById(`b-${x}-${y}`);
-                if (targetCell && targetCell.dataset.fired === "true") {
-                    console.log("Ô này đã bắn rồi!");
+                if (targetCell && (targetCell.dataset.fired === "true" || targetCell.dataset.rendered === "true")) {
                     return;
                 }
 
@@ -2695,18 +2698,23 @@
                     });
 
                     const data = await res.json();
-                    console.log("Kết quả bắn từ server:", data);
 
                     if (!res.ok) {
-                        alert(data.error || 'Lỗi bắn đạn!');
+                        alert(data.error || 'Chưa đến lượt của bạn!');
                         if (phase === 'playing') {
                             startTurnTimer(true);
                         }
                         return;
                     }
 
+                    // VẼ NGAY LẬP TỨC PHÁT BẮN LÊN BÀN CỜ (KHÔNG CẦN CHỜ 1S POLLING)
+                    if (data.shot) {
+                        handlePvpShotResult(data.shot);
+                    }
+
                 } catch (err) {
                     console.error("Lỗi gửi phát bắn:", err);
+                    if (phase === 'playing') startTurnTimer(true);
                 }
                 return;
             }
@@ -3378,10 +3386,9 @@
         }
 
         function handlePvpShotResult(shot) {
-            console.log("Xử lý kết quả bắn:", shot);
             if (!shot) return;
 
-            // 1. Xử lý timeout (mất lượt)
+            // 1. XỬ LÝ TIMEOUT
             if (shot.is_timeout) {
                 log(`[TIMEOUT] ${shot.msg}`, 'text-amber-400 font-bold');
                 triggerSkillAlert(shot.msg, (shot.shooter_role === myPvpRole));
@@ -3406,11 +3413,13 @@
             const coordStr = toCoordName(shot.x, shot.y);
             const resultToShow = shot.display_result || shot.result;
 
-            // 2. Nếu là MÌNH bắn đối phương -> Cập nhật bàn cờ địch (botGrid / b-x-y)
+            // 2. NẾU LÀ MÌNH BẮN
             if (isMeShooting) {
                 const targetCell = document.getElementById(`b-${shot.x}-${shot.y}`);
                 if (targetCell) {
                     targetCell.dataset.fired = "true";
+                    targetCell.dataset.rendered = "true";
+
                     if (resultToShow === 'smoke_hidden') {
                         targetCell.className = 'cell bg-purple-950/80 border border-purple-500/60 text-purple-300 font-bold rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse';
                         targetCell.innerText = '💨';
@@ -3423,27 +3432,32 @@
                     } else if (resultToShow === 'hit' || resultToShow === 'sunk') {
                         if (resultToShow === 'sunk') {
                             playSFX('sunk');
-                            triggerSunkBanner(shot.ship || 'Chiến hạm', true);
-                            markShipSunkOnHUD('enemy', shot.ship);
+                            const sName = shot.ship || 'Chiến hạm';
+                            triggerSunkBanner(sName, true);
+                            markShipSunkOnHUD('enemy', sName);
+                            log(`HỎA LỰC TIÊU DIỆT tại [${coordStr}]! XÁC NHẬN TÀU [${sName.toUpperCase()}] ĐỐI PHƯƠNG ĐÃ CHÌM!`, 'text-emerald-400 font-bold');
                         } else {
                             playSFX('hit');
+                            log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]! Được bắn tiếp!`, 'text-emerald-400 font-bold');
                         }
                         targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                         targetCell.innerText = '✕';
-                        log(`[PVP] Bạn bắn TRÚNG tại [${coordStr}]!`, 'text-emerald-400 font-bold');
                     } else {
                         playSFX('miss');
                         targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
                         targetCell.innerText = '•';
-                        log(`[PVP] Bạn bắn trượt tại [${coordStr}].`, 'text-slate-400');
+                        log(`[PVP] Bạn bắn trượt tại [${coordStr}]. Nhường lượt đối thủ!`, 'text-slate-400');
                     }
                 }
+                // ĐÁNH DẤU VẾT BẮN MỚI NHẤT (🎯) VÀ TRƯỚC ĐÓ (⏱️)
                 recordShotMarker('enemy', shot.x, shot.y);
             } 
-            // 3. Nếu ĐỐI THỦ bắn mình -> Cập nhật bàn cờ ta (playerGrid / p-x-y)
+            // 3. NẾU ĐỐI THỦ BẮN MÌNH
             else {
                 const myCell = document.getElementById(`p-${shot.x}-${shot.y}`);
                 if (myCell) {
+                    myCell.dataset.rendered = "true";
+
                     if (shot.result === 'shield_blocked') {
                         playSFX('shield');
                         myCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
@@ -3452,25 +3466,28 @@
                     } else if (shot.result === 'hit' || shot.result === 'sunk') {
                         if (shot.result === 'sunk') {
                             playSFX('sunk');
-                            triggerSunkBanner(shot.ship || 'Chiến hạm', false);
-                            markShipSunkOnHUD('player', shot.ship);
+                            const sName = shot.ship || 'Chiến hạm';
+                            triggerSunkBanner(sName, false);
+                            markShipSunkOnHUD('player', sName);
+                            log(`CẢNH BÁO: Tàu [${sName.toUpperCase()}] của bạn tại [${coordStr}] đã bị bắn chìm!`, 'text-rose-500 font-black');
                         } else {
                             playSFX('hit');
+                            log(`[CẢNH BÁO] Đối phương bắn TRÚNG tàu của bạn tại [${coordStr}]!`, 'text-rose-400 font-bold');
                         }
                         myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
                         myCell.innerText = '✕';
-                        log(`[CẢNH BÁO] Đối phương bắn TRÚNG tàu của bạn tại [${coordStr}]!`, 'text-rose-400 font-bold');
                     } else {
                         playSFX('miss');
                         myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
                         myCell.innerText = '•';
-                        log(`[PVP] Đối phương bắn trượt tại [${coordStr}]!`, 'text-slate-500');
+                        log(`[PVP] Đối phương bắn trượt tại [${coordStr}]! Đến lượt bạn!`, 'text-slate-400');
                     }
                 }
+                // ĐÁNH DẤU VẾT BẮN MỚI NHẤT TRÊN BÀN CỜ TA
                 recordShotMarker('player', shot.x, shot.y);
             }
 
-            // 4. Xử lý đầu hàng
+            // 4. XỬ LÝ ĐẦU HÀNG
             if (shot.is_surrender) {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
@@ -3481,7 +3498,7 @@
                 return;
             }
 
-            // 5. Xử lý kết thúc trận đấu
+            // 5. XỬ LÝ KẾT THÚC TRẬN ĐẤU
             if (shot.status === 'finished') {
                 phase = 'ended';
                 clearInterval(turnTimerInterval);
@@ -3493,7 +3510,7 @@
                 return;
             }
 
-            // 6. Chuyển lượt đánh tiếp theo
+            // 6. CẬP NHẬT LƯỢT VÀ RESET ĐỒNG HỒ ĐẾM LẠI TỪ 15S
             const isMyTurnNow = (shot.next_turn === myPvpRole);
             const botGrid = document.getElementById('botGrid');
 
@@ -3506,6 +3523,8 @@
                 botGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
                 document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
             }
+            
+            // RESET ĐỒNG HỒ BẮT ĐẦU ĐẾM TỪ ĐẦU (15s)
             startTurnTimer(isMyTurnNow);
         }
 
@@ -3523,7 +3542,7 @@
                 revealBotPowerup(effect.item);
             }
 
-            // Vệ Tinh
+            // VỆ TINH QUÉT
             if (effect.type === 'recon_sat') {
                 playSFX('sonar');
                 if (isMe && effect.target) {
@@ -3535,25 +3554,28 @@
                 }
             }
 
-            // Radar & Sonar
+            // RADAR 3X3 HOẶC SONAR 5X5
             if (effect.type === 'recon_scan' || effect.type === 'recon_sonar') {
                 playSFX('sonar');
-                if (isMe) {
-                    for (let dx = -1; dx <= 1; dx++) {
-                        for (let dy = -1; dy <= 1; dy++) {
-                            const tx = effect.cx + dx;
-                            const ty = effect.cy + dy;
-                            const c = document.getElementById(`b-${tx}-${ty}`);
-                            if (c && !c.dataset.fired) {
-                                c.classList.add('bg-cyan-500/50', 'animate-pulse');
-                                setTimeout(() => c.classList.remove('bg-cyan-500/50', 'animate-pulse'), 3000);
-                            }
+                const radius = (effect.type === 'recon_scan') ? 1 : 2;
+                const gridPrefix = isMe ? 'b' : 'p';
+
+                for (let dx = -radius; dx <= radius; dx++) {
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        const tx = effect.cx + dx;
+                        const ty = effect.cy + dy;
+                        const c = document.getElementById(`${gridPrefix}-${tx}-${ty}`);
+                        if (c && !c.dataset.fired && !c.dataset.rendered) {
+                            c.classList.add(isMe ? 'bg-cyan-500/50' : 'bg-rose-500/40', 'animate-pulse');
+                            setTimeout(() => {
+                                c.classList.remove(isMe ? 'bg-cyan-500/50' : 'bg-rose-500/40', 'animate-pulse');
+                            }, 3000);
                         }
                     }
                 }
             }
 
-            // Khiên Năng Lượng
+            // KHIÊN NĂNG LƯỢNG
             if (effect.type === 'def_shield') {
                 playSFX('shield');
                 const grid = document.getElementById(isMe ? 'playerGrid' : 'botGrid');
@@ -3563,7 +3585,7 @@
                 }, 4000);
             }
 
-            // Màn Khói
+            // MÀN KHÓI
             if (effect.type === 'combat_smokescreen') {
                 const grid = document.getElementById(isMe ? 'playerGrid' : 'botGrid');
                 grid.classList.add('border-purple-500', 'shadow-[0_0_35px_rgba(168,85,247,0.5)]');
