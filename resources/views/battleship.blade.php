@@ -882,7 +882,7 @@
                         <span>🎯</span> BATTLESHIP LÀ TRÒ GÌ? MỤC TIÊU CHIẾN THẮNG RA SAO?
                     </h3>
                     <p class="text-slate-300 mb-2">
-                        Battleship (Bắn Tàu Chiến) là trò chơi chiến thuật đối kháng theo lượt trên lưới tọa độ $10 \times 10$ (từ hàng A-J và cột 1-10). Cả 2 bên đều có <strong>2 bàn cờ riêng biệt</strong>:
+                        Battleship (Bắn Tàu Chiến) là trò chơi chiến thuật đối kháng theo lượt trên lưới tọa độ 10 x 10 (từ hàng A-J và cột 1-10). Cả 2 bên đều có <strong>2 bàn cờ riêng biệt</strong>:
                     </p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono-tactical text-xs mt-2">
                         <div class="p-3 bg-slate-900/80 rounded border border-cyan-500/30">
@@ -913,7 +913,7 @@
                         <div class="p-2 bg-slate-900 border border-slate-700 rounded"><span class="text-cyan-400 font-bold block">Destroyer</span>2 ô liên tiếp</div>
                     </div>
                     <ul class="list-disc pl-5 space-y-2 text-slate-300 text-xs sm:text-sm">
-                        <li><strong>Cách xếp thủ công:</strong> Chọn tên tàu ở hàng trên $\rightarrow$ Nhấn phím <span class="text-indigo-300 font-bold underline">R</span> hoặc nút <em>"Hướng"</em> để xoay Ngang / Dọc $\rightarrow$ Bấm vào ô trên Bàn Cờ Bên Trái để đặt.</li>
+                        <li><strong>Cách xếp thủ công:</strong> Chọn tên tàu ở hàng trên $\rightarrow$ Nhấn phím <span class="text-indigo-300 font-bold underline">R</span> hoặc nút <em>"Hướng"</em> để xoay Ngang / Dọc Bấm vào ô trên Bàn Cờ Bên Trái để đặt.</li>
                         <li><strong>Thu hồi / Xếp lại từng tàu (Undo):</strong> Nếu đặt sai vị trí, chỉ cần <strong>click trực tiếp vào tên chiếc tàu đã có dấu tích (✓)</strong> ở danh sách phía trên để gỡ riêng tàu đó ra và đặt lại!</li>
                         <li><strong>Tự động xếp cực nhanh:</strong> Bấm nút <span class="text-amber-400 font-bold">🎲 TỰ ĐỘNG XẾP</span> để máy tự roll ngẫu nhiên 5 tàu. Bạn có thể roll liên tục đến khi ưng ý rồi bấm <span class="text-emerald-400 font-bold">VÀO TRẬN</span>!</li>
                     </ul>
@@ -991,10 +991,72 @@
                     </div>
                 </section>
 
-                <!-- Mục 4: Đấu Trường Rank & Đấu Mạng PvP -->
+                <!-- Mục 4: Phân Tích Chuyên Sâu Trí Tuệ Nhân Tạo (Bot AI) -->
+                <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
+                    <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2 mb-3">
+                        <span>🤖</span> 4. CẨM NANG TRÍ TUỆ NHÂN TẠO (BOT AI): THUẬT TOÁN & KHẢ NĂNG TÁC CHIẾN
+                    </h3>
+                    <p class="text-slate-300 text-xs sm:text-sm mb-3">
+                        Mỗi cấp độ Bot sử dụng một bộ vi xử lý chiến thuật riêng biệt, quyết định cách chọn ô nã pháo và tần suất kích hoạt các module vũ khí tối tân:
+                    </p>
+
+                    <div class="space-y-3 font-sans">
+                        <!-- Bot Dễ -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-lg border border-emerald-500/30">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-emerald-400 font-bold text-sm">🟢 CẤP ĐỘ: DỄ (EASY BOT)</span>
+                                <span class="text-[11px] font-mono-tactical text-slate-400">Trang bị: 0 - 1 món | Thuật toán: Random Shot</span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                                <li><strong class="text-white">Cơ chế nhắm bắn:</strong> Bắn hú họa ngẫu nhiên hoàn toàn trên bản đồ. Kể cả khi bắn trúng tàu của bạn, Bot Dễ cũng <strong>không biết cách bắn các ô bên cạnh</strong> để tiêu diệt hết con tàu mà tiếp tục bắn vu vơ ô khác.</li>
+                                <li><strong class="text-white">Khả năng dùng trang bị:</strong> Tỉ lệ dùng kỹ năng cực thấp (15%). Nếu có, Bot chỉ trang bị các món trinh sát cơ bản cấp thấp như <em>Sonar cảm biến</em> và hiếm khi gây nguy hiểm.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Bot Trung Bình -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-lg border border-cyan-500/30">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-cyan-300 font-bold text-sm">🔵 CẤP ĐỘ: TRUNG BÌNH (MEDIUM BOT)</span>
+                                <span class="text-[11px] font-mono-tactical text-slate-400">Trang bị: 1 - 2 món | Thuật toán: Target Hunting</span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                                <li><strong class="text-white">Cơ chế săn lùng (Hunting Mode):</strong> Bình thường bắn dò tìm ngẫu nhiên. Nhưng ngay khi <strong>bắn trúng 1 phát</strong>, Bot lập tức chuyển sang chế độ tập trung hỏa lực: Tự động lưu 4 ô liền kề (Trên, Dưới, Trái, Phải) vào hàng đợi để bắn bồi cho đến khi chiếc tàu đó chìm hẳn mới thôi!</li>
+                                <li><strong class="text-white">Khả năng dùng trang bị:</strong> Tỉ lệ dùng trang bị 25%. Bot có thể quét <em>Radar 3x3</em> khoanh vùng hạm đội bạn hoặc kích hoạt <em>Không Kích</em> để cướp lượt bắn.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Bot Khó -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-lg border border-amber-500/30">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-amber-400 font-bold text-sm">🟡 CẤP ĐỘ: KHÓ (HARD BOT)</span>
+                                <span class="text-[11px] font-mono-tactical text-slate-400">Trang bị: 2 - 3 món | Thuật toán: Parity Search (Bàn cờ caro)</span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                                <li><strong class="text-white">Chiến thuật ô bàn cờ (Parity Pattern):</strong> Bot không bắn bừa bãi mà bắn so le dạng ô cờ vua (cách 1 ô bắn 1 ô). Vì con tàu ngắn nhất dài 2 ô, chiến thuật này giúp Bot không bao giờ bỏ sót bất kỳ chiến hạm nào với số lượng đạn tiết kiệm nhất.</li>
+                                <li><strong class="text-white">Xác định hướng tàu (Direction Lock):</strong> Khi bắn trúng 2 ô liên tiếp, Bot nhận biết được tàu đang nằm Ngang hay Dọc và bắn thẳng theo một hàng duy nhất.</li>
+                                <li><strong class="text-white">Khả năng dùng trang bị:</strong> Tỉ lệ dùng trang bị 45%. Biết bật <em>Khiên Năng Lượng</em> để đỡ 3 phát đạn khi tàu bị thương và dùng <em>Vệ Tinh</em> soi thẳng vị trí tàu bạn.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Bot Cực Khó -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-lg border border-rose-500/40 bg-gradient-to-r from-rose-950/20 via-slate-900 to-rose-950/20">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-rose-400 font-bold text-sm">🔴 CỰC KHÓ: AI NGUYÊN TỬ (NIGHTMARE BOT)</span>
+                                <span class="text-[11px] font-mono-tactical text-rose-300 font-bold">Trang bị: Tối đa 3 - 4 món | Thuật toán: Probability Heatmap</span>
+                            </div>
+                            <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                                <li><strong class="text-white">Bản đồ nhiệt xác suất (Probability Heatmap):</strong> Sau mỗi phát bắn, AI tính toán mô phỏng hàng ngàn khả năng đặt tàu còn lại của bạn để tạo ra ma trận mật độ xác suất. Ô nào có khả năng chứa tàu cao nhất sẽ bị nã pháo trước tiên.</li>
+                                <li><strong class="text-white">Phản xạ tự vệ siêu việt:</strong> Khi có tàu sắp chìm, AI tự động kích hoạt <em>Tái Cấu Trúc Khẩn Cấp</em> để hồi đầy máu chiếc tàu đó và bí mật di dời sang vị trí mới, hoặc thả <em>Màn Khói</em> làm mù radar của bạn trong 5 lượt tiếp theo!</li>
+                                <li><strong class="text-white">Tên lửa tự hành:</strong> Khi cần dứt điểm, Nightmare Bot sẵn sàng phóng <em>Tên Lửa Dẫn Đường</em> khóa chết mục tiêu mà không cần ngắm bắn!</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mục 5: Đấu Trường Rank & Đấu Mạng PvP -->
                 <section class="bg-slate-950/60 p-5 rounded-xl border border-slate-800">
                     <h3 class="text-base font-bold text-yellow-300 flex items-center gap-2 mb-3">
-                        <span>⚔️</span> 4. ĐẤU MẠNG PVP & ĐẤU RANK TRỰC TUYẾN
+                        <span>⚔️</span> 5. ĐẤU MẠNG PVP & ĐẤU RANK TRỰC TUYẾN
                     </h3>
                     <div class="space-y-2 text-slate-300 text-xs sm:text-sm">
                         <p><strong>Minigame Tranh Đoạt Khai Hỏa (Kéo - Búa - Bao):</strong> Bắt đầu trận chiến, 2 chỉ huy ra quân để tranh quyền. Người thắng có toàn quyền chọn <span class="text-cyan-300 font-bold">Đi Trước (Bắn trước)</span> để chiếm ưu thế hỏa lực hoặc <span class="text-slate-300 font-bold">Đi Sau</span>.</p>
