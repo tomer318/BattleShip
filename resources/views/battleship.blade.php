@@ -3159,6 +3159,13 @@
                     if (!res.ok || !data.room) return;
 
                     const room = data.room;
+                    
+                    const savedRole = sessionStorage.getItem('current_pvp_role');
+                    if (savedRole) {
+                        myPvpRole = savedRole;
+                    } else if (data.my_role && data.my_role !== 'spectator') {
+                        myPvpRole = data.my_role;
+                    }
 
                     // 1. Đóng modal chờ khi người 2 vào phòng
                     const pvpModal = document.getElementById('pvpModal');
@@ -3310,7 +3317,8 @@
         async function createPvpRoom() {
             try {
                 myPvpRole = 'player1';
-                gameMode = 'pvp'; // <-- PHẢI GÁN NGAY Ở ĐÂY ĐỂ POLLING HOẠT ĐỘNG!
+                sessionStorage.setItem('current_pvp_role', 'player1'); // Khóa cứng role P1
+                gameMode = 'pvp';
                 
                 const res = await fetch('/api/pvp/create', {
                     method: 'POST',
@@ -3346,8 +3354,10 @@
                 return;
             }
 
+            myPvpRole = 'player2';
+            sessionStorage.setItem('current_pvp_role', 'player2'); // Khóa cứng role P2
             currentPvpRoomCode = roomCode;
-            window.activePvpRoomCode = roomCode; // Gán thẳng vào window
+            window.activePvpRoomCode = roomCode;
 
             try {
                 const res = await fetch('/api/pvp/join', {
@@ -3783,8 +3793,11 @@
             if (!data) return;
 
             if (data.type === 'result') {
-                const myChoice = (myPvpRole === 'player1') ? data.p1_choice : data.p2_choice;
-                const enemyChoice = (myPvpRole === 'player1') ? data.p2_choice : data.p1_choice;
+                const role = sessionStorage.getItem('current_pvp_role') || myPvpRole || 'player1';
+                
+                // Phân bổ đúng quân bài: P1 lấy p1_choice, P2 lấy p2_choice
+                const myChoice = (role === 'player1') ? data.p1_choice : data.p2_choice;
+                const enemyChoice = (role === 'player1') ? data.p2_choice : data.p1_choice;
 
                 if (!myChoice || !enemyChoice) return;
 
@@ -3793,12 +3806,10 @@
                 document.getElementById('rpsEnemyChoiceEmoji').innerText = RPS_EMOJIS[enemyChoice];
                 document.getElementById('rpsEnemyChoiceText').innerText = RPS_NAMES[enemyChoice];
 
-                // ẨN DỨT ĐIỂM KHỐI CHỌN QUÂN
                 document.getElementById('rpsSelectionPhase').classList.add('hidden');
                 document.getElementById('rpsVersusPhase').classList.remove('hidden');
 
-                // NẾU HÒA
-                if (data.outcome === 'tie') {
+                if (data.outcome === 'tie' || myChoice === enemyChoice) {
                     playSFX('miss');
                     document.getElementById('rpsInstruction').innerText = 'HAI BÊN HÒA NHAU! HÃY RA QUÂN LẠI!';
                     document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
@@ -3812,8 +3823,9 @@
                     return;
                 }
 
-                // NẾU CÓ THẮNG - THUA
-                const iWon = (data.winner_role === myPvpRole);
+                // So kèo trực tiếp tại máy client: Búa thắng Kéo, Kéo thắng Bao, Bao thắng Búa
+                const winRules = { rock: 'scissors', scissors: 'paper', paper: 'rock' };
+                const iWon = (winRules[myChoice] === enemyChoice);
 
                 if (iWon) {
                     playSFX('victory');
@@ -3822,8 +3834,6 @@
                     log("[TRANH ĐOẠT] Bạn đã CHIẾN THẮNG Kéo Búa Bao! Hãy chọn quyền khai hỏa!", "text-emerald-400 font-bold");
                 } else {
                     playSFX('alarm');
-                    // KHÓA CHẶT: Không cho hiện khối chọn nút, giữ nguyên màn hình chờ đối thủ
-                    document.getElementById('rpsSelectionPhase').classList.add('hidden');
                     document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
                     document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
                     document.getElementById('rpsEnemyDecisionText').innerText = "Đối phương chiến thắng tranh đoạt! Đang chờ đối thủ quyết định lượt đi...";
