@@ -1442,20 +1442,22 @@
             if (phase !== 'playing') return;
 
             // XỬ LÝ HẾT GIỜ CHO PVP ONLINE
-            if (gameMode === 'pvp' && isPlayerTurn) {
-                log(`HẾT GIỜ TÁC CHIẾN (15s)! Bạn đã bị MẤT LƯỢT KHAI HỎA!`, 'text-rose-500 font-bold');
-                triggerSkillAlert("QUÁ GIỜ KHAI HỎA: ĐỐI THỦ CHIẾM QUYỀN BẮN!", true);
-                playSFX('alarm');
+            if (gameMode === 'pvp') {
+                if (isPlayerTurn) {
+                    log(`HẾT GIỜ TÁC CHIẾN (15s)! Bạn đã bị MẤT LƯỢT KHAI HỎA!`, 'text-rose-500 font-bold');
+                    triggerSkillAlert("QUÁ GIỜ KHAI HỎA: ĐỐI THỦ CHIẾM QUYỀN BẮN!", true);
+                    playSFX('alarm');
 
-                const roomCode = currentPvpRoomCode || currentRoomData?.room_code || currentRoomData?.room?.room_code;
-                try {
-                    await fetch('/api/pvp/fire', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                        body: JSON.stringify({ room_code: roomCode, timeout: true })
-                    });
-                } catch (err) {
-                    console.error("Lỗi gửi timeout PvP:", err);
+                    const roomCode = window.activePvpRoomCode || currentPvpRoomCode || currentRoomData?.room_code;
+                    try {
+                        await fetch('/api/pvp/fire', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            body: JSON.stringify({ room_code: roomCode, timeout: true })
+                        });
+                    } catch (err) {
+                        console.error("Lỗi gửi timeout PvP:", err);
+                    }
                 }
                 return;
             }
@@ -3131,7 +3133,8 @@
         let lastSyncedShotCount = 0;
         let hasHandledPlayerJoined = false;
         let lastRpsTimestamp = 0;
-        let isRpsFinished = false; // <-- CỜ KHÓA VĨNH VIỄN MODAL RPS
+        let isRpsFinished = false;
+        let lastSyncedTurn = null;
 
         function startPvpStateSync(roomCode) {
             clearInterval(pvpSyncInterval);
@@ -3139,9 +3142,8 @@
             hasHandledPlayerJoined = false;
             lastRpsTimestamp = 0;
             isRpsFinished = false;
+            lastSyncedTurn = null;
             gameMode = 'pvp';
-
-            console.log("Kích hoạt Smart Polling cho phòng:", roomCode);
 
             pvpSyncInterval = setInterval(async () => {
                 const activeCode = window.activePvpRoomCode || currentPvpRoomCode || roomCode;
@@ -3158,40 +3160,15 @@
 
                     const room = data.room;
 
-                    if (data.my_role && data.my_role !== 'spectator') {
-                        myPvpRole = data.my_role;
-                    }
-
-                    // Cập nhật mở khóa bàn cờ chuẩn xác theo role từ server
-                    if (phase === 'playing' && room.status === 'playing') {
-                        // So sánh trực tiếp role hiện tại với turn từ server (hỗ trợ cả dạng string và object)
-                        const activeTurn = room.current_turn;
-                        const isMyTurn = (activeTurn === myPvpRole);
-                        
-                        const bGrid = document.getElementById('botGrid');
-                        if (bGrid) {
-                            if (isMyTurn) {
-                                // Mở khóa và làm sáng bàn cờ để cho phép bắn
-                                bGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
-                                bGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-                            } else {
-                                // Khóa bàn cờ khi đến lượt đối thủ
-                                bGrid.classList.add('pointer-events-none', 'opacity-40');
-                                bGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
-                            }
-                        }
-                    }
-
-                    // 1. Phía máy 1: Nếu modal chờ đang hiển thị và server đã có người thứ 2 vào phòng
+                    // 1. Đóng modal chờ khi người 2 vào phòng
                     const pvpModal = document.getElementById('pvpModal');
                     const isModalStillOpen = pvpModal && !pvpModal.classList.contains('hidden');
-
                     if (room.player2_id && (isModalStillOpen || !hasHandledPlayerJoined)) {
                         hasHandledPlayerJoined = true;
                         handlePlayerJoined({ room });
                     }
 
-                    // 2. Khi cả 2 người đã bấm "Vào Trận" -> bật popup Oẳn Tù Tì
+                    // 2. Kích hoạt Oẳn Tù Tì
                     if (room.status === 'rps_pending' && !isRpsFinished) {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && rpsModal.classList.contains('hidden')) {
@@ -3205,7 +3182,7 @@
                         handlePvpRpsEvent(data.rps_result);
                     }
 
-                    // 4. Khi trận đấu bắt đầu (playing): Khóa vĩnh viễn modal RPS
+                    // 4. Khi trận đấu chuyển sang 'playing'
                     if (room.status === 'playing') {
                         isRpsFinished = true;
                         const rpsModal = document.getElementById('rpsModal');
@@ -3217,53 +3194,92 @@
                         }
                     }
 
-                    // 5. Đồng bộ và vẽ lại toàn bộ lịch sử các phát đạn của cả 2 bên lên bàn cờ
+                    // 5. ĐỒNG BỘ TIMER VÀ MỞ/KHÓA BÀN CỜ THEO LƯỢT (CHỈ RESET KHI ĐỔI TURN)
+                    if (phase === 'playing' && room.status === 'playing') {
+                        const activeTurn = room.current_turn;
+                        const isMyTurn = (activeTurn === myPvpRole);
+                        const bGrid = document.getElementById('botGrid');
+
+                        if (bGrid) {
+                            if (isMyTurn) {
+                                bGrid.classList.remove('pointer-events-none', 'opacity-40', 'opacity-60');
+                                bGrid.classList.add('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA BẠN: Khai hỏa vào hải đồ đối phương!";
+                            } else {
+                                bGrid.classList.add('pointer-events-none', 'opacity-40');
+                                bGrid.classList.remove('border-rose-600/70', 'shadow-[0_0_25px_rgba(244,63,94,0.2)]');
+                                document.getElementById('gameStatusText').innerText = "LƯỢT CỦA ĐỐI THỦ: Đang chờ đối thủ ngắm bắn...";
+                            }
+                        }
+
+                        // CHỈ KHI LƯỢT CHƠI ĐỔI THÌ MỚI BẮT ĐẦU ĐẾM LẠI TỪ 15S
+                        if (lastSyncedTurn !== activeTurn) {
+                            lastSyncedTurn = activeTurn;
+                            startTurnTimer(isMyTurn);
+                        }
+                    }
+
+                    // 6. ĐỒNG BỘ TOÀN BỘ PHÁT BẮN, HIỆU ỨNG VÀ GẠCH TÀU CHÌM
                     const p1Shots = room.p1_shots || [];
                     const p2Shots = room.p2_shots || [];
 
-                    // Nếu mình là player1, các phát đạn của mình nằm ở p1_shots (vẽ lên botGrid), đạn đối thủ ở p2_shots (vẽ lên playerGrid)
-                    // Nếu mình là player2, đạn của mình nằm ở p2_shots (vẽ lên botGrid), đạn đối thủ ở p1_shots (vẽ lên playerGrid)
                     const myShotsList = (myPvpRole === 'player1') ? p1Shots : p2Shots;
                     const enemyShotsList = (myPvpRole === 'player1') ? p2Shots : p1Shots;
 
-                    // Vẽ các phát đạn của mình lên bàn cờ đối phương (botGrid)
-                    myShotsList.forEach(s => {
+                    // Vẽ các phát đạn của mình lên bàn cờ địch
+                    myShotsList.forEach((s, idx) => {
                         const targetCell = document.getElementById(`b-${s.x}-${s.y}`);
                         if (targetCell && !targetCell.dataset.rendered) {
                             targetCell.dataset.rendered = "true";
                             targetCell.dataset.fired = "true";
                             if (s.result === 'hit' || s.result === 'sunk') {
-                                targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)]';
+                                targetCell.className = 'cell bg-rose-600 border border-rose-400 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse';
                                 targetCell.innerText = '✕';
-                            } else if (s.result === 'shield_blocked') {
-                                targetCell.className = 'cell bg-amber-500 border border-amber-300 text-black rounded-sm';
-                                targetCell.innerText = '🛡️';
+                                if (s.result === 'sunk') {
+                                    triggerSunkBanner(s.ship || 'Chiến hạm', true);
+                                    markShipSunkOnHUD('enemy', s.ship);
+                                }
                             } else {
                                 targetCell.className = 'cell bg-slate-800/80 border border-slate-700 text-slate-500 rounded-sm';
                                 targetCell.innerText = '•';
                             }
+                            recordShotMarker('enemy', s.x, s.y);
                         }
                     });
 
-                    // Vẽ các phát đạn của đối phương bắn mình lên bàn cờ nhà (playerGrid)
-                    enemyShotsList.forEach(s => {
+                    // Vẽ các phát đạn đối phương bắn mình (KÈM ÂM THANH, NHẬT KÝ, TÂM NGẮM 🎯/⏱️)
+                    enemyShotsList.forEach((s, idx) => {
                         const myCell = document.getElementById(`p-${s.x}-${s.y}`);
                         if (myCell && !myCell.dataset.rendered) {
                             myCell.dataset.rendered = "true";
+                            const coordName = toCoordName(s.x, s.y);
+
                             if (s.result === 'hit' || s.result === 'sunk') {
-                                myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)]';
+                                myCell.className = 'cell bg-rose-600 border border-rose-300 text-white rounded-sm shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-bounce';
                                 myCell.innerText = '✕';
-                            } else if (s.result === 'shield_blocked') {
-                                myCell.className = 'cell bg-cyan-500 border border-cyan-200 text-black font-black rounded-sm';
-                                myCell.innerText = '🛡️';
+                                playSFX('hit');
+
+                                if (s.result === 'sunk') {
+                                    playSFX('sunk');
+                                    triggerSunkBanner(s.ship || 'Chiến hạm', false);
+                                    markShipSunkOnHUD('player', s.ship);
+                                    log(`[CẢNH BÁO] Tàu [${(s.ship || 'CHIẾN HẠM').toUpperCase()}] của bạn đã BỊ BẮN CHÌM!`, 'text-rose-500 font-bold');
+                                } else {
+                                    log(`[CẢNH BÁO] Đối phương bắn TRÚNG tàu của bạn tại [${coordName}]!`, 'text-rose-400 font-bold');
+                                }
                             } else {
                                 myCell.className = 'cell bg-slate-800 border border-slate-700 text-slate-500 rounded-sm';
                                 myCell.innerText = '•';
+                                playSFX('miss');
+                                log(`[PVP] Đối phương bắn trượt tại [${coordName}]! Đến lượt bạn!`, 'text-slate-500');
                             }
+
+                            // HIỆN TÂM NGẮM 🎯/⏱️ BÊN BÀN CỜ MÌNH BỊ BẮN
+                            recordShotMarker('player', s.x, s.y);
                         }
                     });
 
-                    // 6. Đồng bộ kết thúc trận
+                    // 7. Đồng bộ kết thúc trận
                     if (room.status === 'finished' && phase === 'playing') {
                         handlePvpShotResult({
                             status: 'finished',

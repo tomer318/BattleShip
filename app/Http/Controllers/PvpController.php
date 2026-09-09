@@ -880,32 +880,22 @@ class PvpController extends Controller
             return response()->json(['error' => 'Phòng không tồn tại'], 404);
         }
 
-        /** @var User|null $user */
-        $user = Auth::user();
-        
-        // Xác định chính xác role của người đang gọi API này
-        $myRole = 'spectator';
-        if ($user) {
-            if ($room->player1_id === $user->id) {
-                $myRole = 'player1';
-            } elseif ($room->player2_id === $user->id) {
-                $myRole = 'player2';
-            }
-        }
-
         $p1Skills = is_array($room->p1_active_skills) ? $room->p1_active_skills : [];
+        $p2Skills = is_array($room->p2_active_skills) ? $room->p2_active_skills : [];
 
         return response()->json([
             'status'       => 'success',
             'room'         => $room,
-            'my_role'      => $myRole, // Luôn chuẩn xác 100% theo session user
             'current_turn' => $room->current_turn,
             'game_status'  => $room->status,
             'winner'       => $room->winner,
+            'player1_id'   => $room->player1_id,
             'player2_id'   => $room->player2_id,
             'rps_result'   => $p1Skills['last_rps_result'] ?? null,
             'p1_shots'     => $room->p1_shots ?? [],
             'p2_shots'     => $room->p2_shots ?? [],
+            'p1_ships'     => $room->p1_ships ?? [],
+            'p2_ships'     => $room->p2_ships ?? [],
             'p1_ready'     => (bool) $room->p1_ready,
             'p2_ready'     => (bool) $room->p2_ready,
         ]);
