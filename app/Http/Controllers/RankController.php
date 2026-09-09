@@ -300,27 +300,45 @@ class RankController extends Controller
 
         $opponentRank = (int) $request->input('opponent_rank', 99);
         $isWin = (bool) $request->input('is_win', true);
-        $gainedElo = (int) $request->input('gained_elo', 20);
+        $gainedElo = (int) $request->input('gained_elo', 25);
+
+        $earnedCredits = 0;
+        $earnedGems = 0;
 
         if ($isWin) {
             $user->elo = ($user->elo ?? 500) + $gainedElo;
             $user->pvp_wins = ($user->pvp_wins ?? 0) + 1;
+            
+            // THẮNG: Thưởng $300 + 5 Gems
+            $earnedCredits = 300;
+            $earnedGems = 5;
+            $user->credits = ($user->credits ?? 0) + $earnedCredits;
+            $user->gems = ($user->gems ?? 0) + $earnedGems;
 
             if ($opponentRank <= 5) {
                 \App\Http\Controllers\AchievementController::unlock($user, 'pvp_beat_top5');
             }
         } else {
+            // THUA: Trừ -15 Elo, Bù tiền an ủi $75, 0 Gems
             $user->elo = max(100, ($user->elo ?? 500) - 15);
             $user->pvp_losses = ($user->pvp_losses ?? 0) + 1;
+
+            $earnedCredits = 75;
+            $earnedGems = 0;
+            $user->credits = ($user->credits ?? 0) + $earnedCredits;
         }
 
         $user->rank_tier = self::calculateTier($user->elo);
         $user->save();
 
         return response()->json([
-            'status'    => 'success',
-            'elo'       => $user->elo,
-            'rank_tier' => $user->rank_tier,
+            'status'         => 'success',
+            'elo'            => $user->elo,
+            'rank_tier'      => $user->rank_tier,
+            'credits'        => $user->credits,
+            'gems'           => $user->gems,
+            'earned_credits' => $earnedCredits,
+            'earned_gems'    => $earnedGems,
         ]);
     }
 

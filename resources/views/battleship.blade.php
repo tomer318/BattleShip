@@ -2851,17 +2851,31 @@
                     }
                     log(`[CHIẾN CÔNG RANK] Bạn đánh bại [${currentRankOpponent.name}]! +${gainedElo} ELO!`, 'text-amber-300 font-black');
 
-                    // Gửi cập nhật Elo và kiểm tra Top 5 để mở khóa "Hải Vương Tối Thượng"
                     fetch('/api/ranks/record-result', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                         body: JSON.stringify({
-                            opponent_id: currentRankOpponent.id,
-                            opponent_rank: currentRankOpponent.rank,
-                            is_win: true,
+                            is_win: isIWin,
                             gained_elo: gainedElo
                         })
-                    }).then(() => loadAchievements());
+                    }).then(async res => {
+                        const data = await res.json();
+                        if (data.status === 'success' && currentUser) {
+                            currentUser.elo = data.elo;
+                            currentUser.rank_tier = data.rank_tier;
+                            // NHẬN SỐ DƯ TIỀN VÀ GEMS ĐÃ ĐƯỢC LƯU TRÊN DATABASE
+                            currentUser.credits = data.credits;
+                            currentUser.gems = data.gems;
+
+                            if (isIWin) {
+                                currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
+                            } else {
+                                currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
+                            }
+                            renderUserHUD();
+                        }
+                        loadAchievements();
+                    }).catch(err => console.error("Lỗi cập nhật kết quả rank:", err));
 
                     isRankMatch = false;
                 }
@@ -3020,6 +3034,11 @@
         }
 
         async function submitScore() {
+            if (!currentGameId) {
+                document.getElementById('victoryModal').classList.add('hidden');
+                return;
+            }
+
             const name = document.getElementById('commanderName').value;
             const res = await fetch(`/api/games/${currentGameId}/save-score`, {
                 method: 'POST',
@@ -3028,7 +3047,7 @@
             });
             const data = await res.json();
 
-            if (currentUser) {
+            if (currentUser && data.total_credits !== undefined) {
                 currentUser.credits = data.total_credits;
                 renderUserHUD();
             }
@@ -3548,7 +3567,7 @@
 
                 const isIWin = (shot.winner === myPvpRole);
 
-                // GỌI API CẬP NHẬT ELO, TIỀN VÀ GEMS (Chỉ gọi 1 lần duy nhất)
+                // GỌI API CẬP NHẬT KẾT QUẢ
                 if (!isPvpResultRecorded) {
                     isPvpResultRecorded = true;
 
@@ -3566,10 +3585,12 @@
                         if (data.status === 'success' && currentUser) {
                             currentUser.elo = data.elo;
                             currentUser.rank_tier = data.rank_tier;
+                            // Cập nhật số dư tiền & Gems chuẩn xác từ Database trả về
+                            currentUser.credits = data.credits;
+                            currentUser.gems = data.gems;
+
                             if (isIWin) {
                                 currentUser.pvp_wins = (currentUser.pvp_wins || 0) + 1;
-                                currentUser.credits = (currentUser.credits || 0) + 300; // Thưởng $300 khi thắng Rank
-                                currentUser.gems = (currentUser.gems || 0) + 5;       // Thưởng 5 Gems
                             } else {
                                 currentUser.pvp_losses = (currentUser.pvp_losses || 0) + 1;
                             }
@@ -3585,7 +3606,7 @@
                     log("[CHIẾN CÔNG] Bạn đã giành CHIẾN THẮNG vang dội! (+25 ELO | +$300 | +5💎)", "text-amber-300 font-black text-sm");
                     triggerSkillAlert("🏆 CHIẾN THẮNG HUY HOÀNG! BẠN ĐƯỢC +25 ELO", false);
 
-                    // BẬT MODAL VINH DANH CHIẾN THẮNG CHO NGƯỜI THẮNG
+                    // Bật Modal vinh danh cho bên thắng
                     showVictoryModal({
                         score: 7500,
                         duration_seconds: 60,
@@ -3595,8 +3616,8 @@
                 } else {
                     playSFX('alarm');
                     document.getElementById('gameStatusText').innerText = "☠️ THẤT BẠI TÁC CHIẾN! HẠM ĐỘI CỦA BẠN ĐÃ BỊ ĐÁNH CHÌM! (-15 ELO)";
-                    log("[THẤT BẠI] Toàn bộ hạm đội của bạn đã bị tiêu diệt. (-15 ELO)", "text-rose-500 font-bold text-sm");
-                    triggerSkillAlert("☠️ THẤT BẠI! TOÀN BỘ HẠM ĐỘI BỊ BẮN HẠ (-15 ELO)", true);
+                    log("[THẤT BẠI] Toàn bộ hạm đội của bạn đã bị tiêu diệt. (-15 ELO | Bù trợ cấp: +$75)", "text-rose-500 font-bold text-sm");
+                    triggerSkillAlert("☠️ THẤT BẠI! (-15 ELO | TRỢ CẤP +$75)", true);
                 }
                 return;
             }
