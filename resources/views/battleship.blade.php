@@ -1768,6 +1768,15 @@
                 return;
             }
 
+            if (gameMode === 'pvp') {
+                const role = sessionStorage.getItem('current_pvp_role') || myPvpRole;
+                const bGrid = document.getElementById('botGrid');
+                if (bGrid && bGrid.classList.contains('pointer-events-none')) {
+                    alert('Chưa đến lượt của bạn! Vui lòng đợi đối thủ hoàn thành lượt.');
+                    return;
+                }
+            }
+
             playSFX('click');
 
             if (itemId === 'recon_scan' || itemId === 'recon_sonar') {
@@ -4074,16 +4083,29 @@
                 document.getElementById('rankMatchmakingModal').classList.add('hidden');
 
                 if (!isBot && room) {
-                    // VÀO TRẬN ĐẤU PVP ONLINE VỚI NGƯỜI THẬT
+                    // 1. VÀO TRẬN ĐẤU PVP RANK ONLINE VỚI NGƯỜI THẬT
                     currentPvpRoomCode = room.room_code;
+                    window.activePvpRoomCode = room.room_code;
                     currentRoomData = room;
+                    
+                    // Khóa chặt vai vế P1 hoặc P2 vào sessionStorage để không bao giờ bị lệch Turn/Lượt bắn
                     myPvpRole = role;
+                    sessionStorage.setItem('current_pvp_role', role);
+
+                    isRankMatch = true;
+                    gameMode = 'pvp';
+                    
+                    // Xóa mảng lịch sử đạn cũ
+                    clearShotMarkers();
+                    resetFleetHUD();
+                    
                     subscribeToRoom(room.room_code);
                     startPvpMatch(room, role);
-                    log(`[ĐẤU RANK TRỰC TUYẾN] Đã kết nối với Chỉ Huy [${opponent.name}]! Bắt đầu dàn trận!`, 'text-emerald-400 font-extrabold text-sm');
-                    triggerSkillAlert(`ĐỐI ĐẦU CHỈ HUY TRỰC TUYẾN: ${opponent.name.toUpperCase()}`, false);
+
+                    log(`[ĐẤU RANK TRỰC TUYẾN] Đã kết nối với Chỉ Huy [${opponent.name}] (Elo: ${opponent.elo})! Hãy dàn trận và bấm VÀO TRẬN!`, 'text-emerald-400 font-extrabold text-sm');
+                    triggerSkillAlert(`ĐỐI ĐẦU RANK TRỰC TUYẾN: ${opponent.name.toUpperCase()}`, false);
                 } else {
-                    // VÀO TRẬN ĐẤU VỚI BOT RANK
+                    // 2. VÀO TRẬN ĐẤU VỚI BOT RANK (KHI QUÁ 25S)
                     isRankMatch = true;
                     currentRankOpponent = opponent;
                     gameMode = 'pve';

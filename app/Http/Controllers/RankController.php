@@ -199,12 +199,17 @@ class RankController extends Controller
                 $opponentUser = User::find($matchedOpponent->user_id);
                 $roomCode = 'RANK-' . strtoupper(Str::random(5));
 
-                // Tạo phòng thi đấu PvP online chính thức
+                // Tạo phòng thi đấu PvP Rank online chính thức
                 $room = Room::create([
-                    'room_code'  => $roomCode,
-                    'player1_id' => $matchedOpponent->user_id,
-                    'player2_id' => $user->id,
-                    'status'     => 'setup',
+                    'room_code'         => $roomCode,
+                    'player1_id'        => $matchedOpponent->user_id,
+                    'player2_id'        => $user->id,
+                    'status'            => 'setup',
+                    'current_turn'      => 'player1', // Khởi tạo sẵn giá trị hợp lệ
+                    'p1_shots'          => [],
+                    'p2_shots'          => [],
+                    'p1_active_skills'  => [],
+                    'p2_active_skills'  => [],
                 ]);
 
                 // Đánh dấu cho người chơi thứ nhất biết đã ghép thành công
