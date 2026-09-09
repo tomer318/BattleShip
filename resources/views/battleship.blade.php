@@ -3169,7 +3169,7 @@
                     }
 
                     // 2. Kích hoạt Oẳn Tù Tì
-                    if (room.status === 'rps_pending' && !isRpsFinished) {
+                    if (room.status === 'rps_pending' && !isRpsFinished && !lastRpsTimestamp) {
                         const rpsModal = document.getElementById('rpsModal');
                         if (rpsModal && rpsModal.classList.contains('hidden')) {
                             onBothPlayersReady(room);
@@ -3676,6 +3676,9 @@
         const RPS_NAMES = { rock: 'BÚA', scissors: 'KÉO', paper: 'BAO' };
 
         function openRpsModal() {
+            // Nếu đã xong RPS hoặc đã vào trận thì không mở lại
+            if (isRpsFinished || phase === 'playing') return;
+
             document.getElementById('rpsSelectionPhase').classList.remove('hidden');
             document.getElementById('rpsVersusPhase').classList.add('hidden');
             document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
@@ -3780,17 +3783,8 @@
             if (!data) return;
 
             if (data.type === 'result') {
-                // Xác định chính xác quân của mình và của đối phương
-                let myChoice = window.lastRpsMyPick;
-                let enemyChoice = null;
-
-                if (myPvpRole === 'player1') {
-                    myChoice = myChoice || data.p1_choice;
-                    enemyChoice = data.p2_choice;
-                } else {
-                    myChoice = myChoice || data.p2_choice;
-                    enemyChoice = data.p1_choice;
-                }
+                const myChoice = (myPvpRole === 'player1') ? data.p1_choice : data.p2_choice;
+                const enemyChoice = (myPvpRole === 'player1') ? data.p2_choice : data.p1_choice;
 
                 if (!myChoice || !enemyChoice) return;
 
@@ -3799,11 +3793,12 @@
                 document.getElementById('rpsEnemyChoiceEmoji').innerText = RPS_EMOJIS[enemyChoice];
                 document.getElementById('rpsEnemyChoiceText').innerText = RPS_NAMES[enemyChoice];
 
+                // ẨN DỨT ĐIỂM KHỐI CHỌN QUÂN
                 document.getElementById('rpsSelectionPhase').classList.add('hidden');
                 document.getElementById('rpsVersusPhase').classList.remove('hidden');
 
-                // Trường hợp hòa
-                if (myChoice === enemyChoice || data.outcome === 'tie') {
+                // NẾU HÒA
+                if (data.outcome === 'tie') {
                     playSFX('miss');
                     document.getElementById('rpsInstruction').innerText = 'HAI BÊN HÒA NHAU! HÃY RA QUÂN LẠI!';
                     document.getElementById('rpsInstruction').className = 'text-xs text-amber-400 font-bold mt-1 animate-bounce';
@@ -3817,9 +3812,8 @@
                     return;
                 }
 
-                // Thuật toán so kèo trực tiếp: Kéo thắng Bao, Bao thắng Búa, Búa thắng Kéo
-                const winRules = { rock: 'scissors', scissors: 'paper', paper: 'rock' };
-                const iWon = (winRules[myChoice] === enemyChoice);
+                // NẾU CÓ THẮNG - THUA
+                const iWon = (data.winner_role === myPvpRole);
 
                 if (iWon) {
                     playSFX('victory');
@@ -3828,6 +3822,8 @@
                     log("[TRANH ĐOẠT] Bạn đã CHIẾN THẮNG Kéo Búa Bao! Hãy chọn quyền khai hỏa!", "text-emerald-400 font-bold");
                 } else {
                     playSFX('alarm');
+                    // KHÓA CHẶT: Không cho hiện khối chọn nút, giữ nguyên màn hình chờ đối thủ
+                    document.getElementById('rpsSelectionPhase').classList.add('hidden');
                     document.getElementById('rpsTurnChoicePhase').classList.add('hidden');
                     document.getElementById('rpsEnemyTurnChoicePhase').classList.remove('hidden');
                     document.getElementById('rpsEnemyDecisionText').innerText = "Đối phương chiến thắng tranh đoạt! Đang chờ đối thủ quyết định lượt đi...";
@@ -3836,6 +3832,7 @@
             }
 
             if (data.type === 'turn_decided') {
+                isRpsFinished = true;
                 closeModal('rpsModal');
                 realStartPvpBattle(data.starter_role);
             }
