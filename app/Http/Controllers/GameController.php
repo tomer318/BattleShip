@@ -696,21 +696,40 @@ class GameController extends Controller
             'Destroyer' => 300,
         ];
         
+        // Tạo bản đồ các ô đã bị bắn trúng vào hạm đội ta (dựa trên mảng player_shots)
+        $enemyHitsOnPlayer = [];
+        foreach ($game->player_shots ?? [] as $shot) {
+            if (in_array($shot['result'] ?? '', ['hit', 'sunk'])) {
+                $enemyHitsOnPlayer["{$shot['x']},{$shot['y']}"] = true;
+            }
+        }
+
         $fleetScore = 0;
         $totalHealthPoints = 0;
         $remainingHealthPoints = 0;
 
         foreach ($game->player_ships as $ship) {
+            $size = $ship['size'] ?? count($ship['coordinates'] ?? []);
+            $totalHealthPoints += $size;
+
+            // Đếm số ô thực tế còn nguyên vẹn chưa bị bắn trúng
+            $survivedCells = 0;
+            foreach ($ship['coordinates'] ?? [] as $c) {
+                if (!isset($enemyHitsOnPlayer["{$c['x']},{$c['y']}"])) {
+                    $survivedCells++;
+                }
+            }
+
+            $remainingHealthPoints += $survivedCells;
+
             $val = $shipValues[$ship['name']] ?? 400;
-            $dmgRatio = $ship['hits'] / $ship['size'];
-            $survivedRatio = max(0, 1 - $dmgRatio);
-            
+            $survivedRatio = $size > 0 ? ($survivedCells / $size) : 0;
             $fleetScore += round($val * $survivedRatio);
-            $totalHealthPoints += $ship['size'];
-            $remainingHealthPoints += ($ship['size'] - $ship['hits']);
         }
 
-        $fleetHealthPercent = round(($remainingHealthPoints / $totalHealthPoints) * 100);
+        // Tính phần trăm bảo toàn chính xác
+        $fleetHealthPercent = $totalHealthPoints > 0 ? round(($remainingHealthPoints / $totalHealthPoints) * 100) : 0;
+        
         $timeBonus = max(0, (300 - $duration)) * 10;
         $accuracyBonus = round(($accuracy / 100) * 2000);
 
